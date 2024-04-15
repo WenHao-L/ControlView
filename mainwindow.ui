@@ -68,25 +68,89 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
+      <widget class="QWidget" name="cameraPage">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>280</width>
+         <height>100</height>
+        </rect>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>100</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>100</height>
+        </size>
+       </property>
+       <attribute name="label">
+        <string>相机列表</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QComboBox" name="cameraComboBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="cameraLayout">
+          <item>
+           <widget class="QPushButton" name="searchCameraButton">
+            <property name="text">
+             <string>搜索相机</string>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
+            </property>
+            <property name="autoExclusive">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="cameraButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>打开相机</string>
+            </property>
+            <property name="autoExclusive">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="capturePage">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
          <width>280</width>
-         <height>350</height>
+         <height>400</height>
         </rect>
        </property>
        <property name="minimumSize">
         <size>
          <width>280</width>
-         <height>350</height>
+         <height>400</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>280</width>
-         <height>350</height>
+         <height>400</height>
         </size>
        </property>
        <attribute name="label">
@@ -190,6 +254,9 @@
            <widget class="QRadioButton" name="videoRadioButton">
             <property name="text">
              <string>视频模式</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -367,19 +434,19 @@
          <x>0</x>
          <y>0</y>
          <width>280</width>
-         <height>200</height>
+         <height>210</height>
         </rect>
        </property>
        <property name="minimumSize">
         <size>
          <width>280</width>
-         <height>200</height>
+         <height>210</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>280</width>
-         <height>200</height>
+         <height>210</height>
         </size>
        </property>
        <attribute name="label">
@@ -546,7 +613,7 @@
      <x>0</x>
      <y>0</y>
      <width>1033</width>
-     <height>23</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">

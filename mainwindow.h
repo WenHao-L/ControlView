@@ -35,6 +35,10 @@ private slots:
 
     void on_defaultValueButton_clicked();
 
+    void on_searchCameraButton_clicked();
+
+    void on_cameraButton_clicked();
+
 private:
     Ui::MainWindow *ui;
 };
