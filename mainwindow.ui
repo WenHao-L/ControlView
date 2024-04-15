@@ -66,7 +66,7 @@
        <enum>QFrame::Plain</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="cameraPage">
        <property name="geometry">
@@ -161,6 +161,9 @@
          <layout class="QHBoxLayout" name="selectLayout">
           <item>
            <widget class="QPushButton" name="captureButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>捕获</string>
             </property>
@@ -168,6 +171,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="videoButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>录像</string>
             </property>
@@ -178,10 +184,18 @@
         <item>
          <layout class="QGridLayout" name="gridLayout">
           <item row="2" column="2">
-           <widget class="QComboBox" name="formatComboBox"/>
+           <widget class="QComboBox" name="formatComboBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
           </item>
           <item row="0" column="2">
-           <widget class="QComboBox" name="previewComboBox"/>
+           <widget class="QComboBox" name="previewComboBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
           </item>
           <item row="0" column="0">
            <widget class="QLabel" name="previewLabel">
@@ -198,7 +212,11 @@
            </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QComboBox" name="captureComboBox"/>
+           <widget class="QComboBox" name="captureComboBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="formatLabel">
@@ -271,6 +289,9 @@
         </item>
         <item>
          <widget class="QCheckBox" name="autoExposureCheckBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>自动曝光</string>
           </property>
@@ -299,21 +320,9 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="exposureTargetEdit">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
+           <widget class="QLabel" name="exposureTargetNumLabel">
+            <property name="text">
+             <string>0</string>
             </property>
            </widget>
           </item>
@@ -321,6 +330,9 @@
         </item>
         <item>
          <widget class="QSlider" name="exposureTargetSlider">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -349,21 +361,9 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="exposureTimeEdit">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
+           <widget class="QLabel" name="exposureTimeNumLabel">
+            <property name="text">
+             <string>0</string>
             </property>
            </widget>
           </item>
@@ -371,6 +371,9 @@
         </item>
         <item>
          <widget class="QSlider" name="exposureTimeSlider">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -399,21 +402,9 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="gainEdit">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
+           <widget class="QLabel" name="gainNumLabel">
+            <property name="text">
+             <string>0</string>
             </property>
            </widget>
           </item>
@@ -421,6 +412,9 @@
         </item>
         <item>
          <widget class="QSlider" name="gainSlider">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -479,21 +473,9 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="temperatureEdit">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
+           <widget class="QLabel" name="temperatureNumLabel">
+            <property name="text">
+             <string>0</string>
             </property>
            </widget>
           </item>
@@ -529,21 +511,9 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLineEdit" name="tintEdit">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
+           <widget class="QLabel" name="tintNumLabel">
+            <property name="text">
+             <string>0</string>
             </property>
            </widget>
           </item>
@@ -574,6 +544,9 @@
          <layout class="QHBoxLayout" name="wbSelectLayout">
           <item>
            <widget class="QPushButton" name="whileBalanceButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>白平衡</string>
             </property>
@@ -581,6 +554,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="defaultValueButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>默认值</string>
             </property>
@@ -613,15 +589,9 @@
      <x>0</x>
      <y>0</y>
      <width>1033</width>
-     <height>24</height>
+     <height>23</height>
     </rect>
    </property>
-   <widget class="QMenu" name="fileMenu">
-    <property name="title">
-     <string>文件</string>
-    </property>
-   </widget>
-   <addaction name="fileMenu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
