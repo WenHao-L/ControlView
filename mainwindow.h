@@ -24,6 +24,7 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
+
     ~MainWindow();
 
 private slots:
@@ -39,7 +40,14 @@ private slots:
 
     void on_cameraButton_clicked();
 
+signals:
+    void evtCallback(int idx, unsigned nEvent);
+
 private:
+    void openCamera();
+
+    void closeCamera();
+
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

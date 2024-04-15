@@ -82,7 +82,6 @@ void MainWindow::on_searchCameraButton_clicked()
     }
 }
 
-
 void MainWindow::on_cameraButton_clicked()
 {
     if (ui->cameraButton->text() == "打开相机")
@@ -98,4 +97,62 @@ void MainWindow::on_cameraButton_clicked()
         ui->searchCameraButton->setEnabled(true);
     }
 }
+
+void MainWindow::openCamera()
+{
+    // 打开摄像头
+    mHcam = Nncam_Open(mCur.id);
+    if (mHcam)
+    {
+        // 获取摄像头的分辨率信息
+        Nncam_get_eSize(mHcam, (unsigned*)&mRes);
+        // 获取当前分辨率下的图像宽度和高度
+        mImgWidth = mCur.model->res[mRes].width;
+        mImgHeight = mCur.model->res[mRes].height;
+        // 设置摄像头选项，这里设置为RGB字节序，因为QImage使用RGB字节序
+        Nncam_put_Option(mHcam, NNCAM_OPTION_BYTEORDER, 0);
+        // 设置是否启用自动曝光
+        Nncam_put_AutoExpoEnable(mHcam, ui->autoExposureCheckBox->isChecked()? 1 : 0);
+        // 启动摄像头
+//        startCamera();
+    }
+}
+
+void MainWindow::closeCamera()
+{
+    if (mHcam)
+    {
+        Nncam_Close(mHcam);
+        mHcam = nullptr;
+    }
+    delete[] mPData;
+    mPData = nullptr;
+
+//    mTimer->stop();
+//    m_lbl_frame->clear();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
