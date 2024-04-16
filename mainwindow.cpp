@@ -12,6 +12,45 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
+    ui->tintNumLabel->setText(QString::number(NNCAM_TINT_DEF));
+    ui->temperatureSlider->setRange(NNCAM_TEMP_MIN, NNCAM_TEMP_MAX);
+    ui->temperatureSlider->setValue(NNCAM_TEMP_DEF);
+    ui->tintSlider->setRange(NNCAM_TINT_MIN, NNCAM_TINT_MAX);
+    ui->tintSlider->setValue(NNCAM_TINT_DEF);
+
+    connect(this, &MainWindow::evtCallback, this, [this](unsigned nEvent)
+    {
+        if (mHcam)
+        {
+            if (NNCAM_EVENT_IMAGE == nEvent)
+                handleImageEvent();
+            else if (NNCAM_EVENT_EXPOSURE == nEvent)
+                handleExpoEvent();
+            else if (NNCAM_EVENT_TEMPTINT == nEvent)
+                handleTempTintEvent();
+            else if (NNCAM_EVENT_STILLIMAGE == nEvent)
+                handleStillImageEvent();
+            else if (NNCAM_EVENT_ERROR == nEvent)
+            {
+                closeCamera();
+                QMessageBox::warning(this, "Warning", "Generic error.");
+            }
+            else if (NNCAM_EVENT_DISCONNECTED == nEvent)
+            {
+                closeCamera();
+                QMessageBox::warning(this, "Warning", "Camera disconnect.");
+            }
+        }
+    });
+
+    connect(mTimer, &QTimer::timeout, this, [this]()
+    {
+        unsigned nFrame = 0, nTime = 0, nTotalFrame = 0;
+        if (mHcam && SUCCEEDED(Nncam_get_FrameRate(mHcam, &nFrame, &nTime, &nTotalFrame)) && (nTime > 0))
+            ui->lblLabel->setText(QString::asprintf("%u, fps = %.1f", nTotalFrame, nFrame * 1000.0 / nTime));
+    });
 }
 
 MainWindow::~MainWindow()
@@ -19,10 +58,36 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::closeEvent(QCloseEvent*)
+{
+    closeCamera();
+}
 
 void MainWindow::on_captureButton_clicked()
 {
-
+//    if (mHcam)
+//    {
+//        if (0 == mCur.model->still)    // not support still image capture
+//        {
+//            if (mPData)
+//            {
+//                QImage image(mPData, mImgWidth, mImgHeight, QImage::Format_RGB888);
+//                image.save(QString::asprintf("demoqt_%u.jpg", ++mCount));
+//            }
+//        }
+//        else
+//        {
+//            QMenu menu;
+//            for (unsigned i = 0; i < mCur.model->still; ++i)
+//            {
+//                menu.addAction(QString::asprintf("%u*%u", mCur.model->res[i].width, mCur.model->res[i].height), this, [this, i](bool)
+//                               {
+//                                   Nncam_Snap(mCcam, i);
+//                               });
+//            }
+//            menu.exec(mapToGlobal(ui->captureButton->pos()));
+//        }
+//    }
 }
 
 void MainWindow::on_videoButton_clicked()
@@ -32,7 +97,7 @@ void MainWindow::on_videoButton_clicked()
 
 void MainWindow::on_whileBalanceButton_clicked()
 {
-
+    Nncam_AwbOnce(mHcam, nullptr, nullptr);
 }
 
 void MainWindow::on_defaultValueButton_clicked()
@@ -45,7 +110,7 @@ void MainWindow::on_searchCameraButton_clicked()
     // 如果相机已打开，则关闭相机
     if (mHcam)
     {
-//        closeCamera();
+        closeCamera();
         unsigned count = 0;
     }
     else
@@ -54,8 +119,7 @@ void MainWindow::on_searchCameraButton_clicked()
         ui->cameraComboBox->clear();
         // 枚举可用相机设备
         NncamDeviceV2 arr[NNCAM_MAX] = { 0 };
-//        unsigned count = Nncam_EnumV2(arr);
-        unsigned count = 1;
+        unsigned count = Nncam_EnumV2(arr);
         // 如果没有找到相机，则显示警告信息
         if (0 == count)
             QMessageBox::warning(this, "Warning", "No camera found.");
@@ -63,8 +127,7 @@ void MainWindow::on_searchCameraButton_clicked()
         else if (1 == count)
         {
             mCur = arr[0];
-//            ui->cameraComboBox->addItem(QString::fromWCharArray(arr[0].displayname));
-            ui->cameraComboBox->addItem("测试");
+            ui->cameraComboBox->addItem(QString::fromWCharArray(arr[0].displayname));
             ui->cameraComboBox->setEnabled(true);
             ui->cameraButton->setEnabled(true);
         }
@@ -74,10 +137,6 @@ void MainWindow::on_searchCameraButton_clicked()
             for (unsigned i = 0; i < count; ++i)
             {
                 ui->cameraComboBox->addItem(QString::fromWCharArray(arr[i].displayname));
-//                if (0 == i)
-//                    ui->cameraComboBox->addItem("测试1");
-//                else
-//                    ui->cameraComboBox->addItem("测试2");
             }
             ui->cameraComboBox->setCurrentIndex(0);
             mCur = arr[0];
@@ -90,17 +149,9 @@ void MainWindow::on_searchCameraButton_clicked()
 void MainWindow::on_cameraButton_clicked()
 {
     if (ui->cameraButton->text() == "打开相机")
-    {
-//        openCamera();
-        ui->cameraButton->setText("关闭相机");
-        ui->searchCameraButton->setEnabled(false);
-    }
+        openCamera();
     else
-    {
-//        closeCamera();
-        ui->cameraButton->setText("打开相机");
-        ui->searchCameraButton->setEnabled(true);
-    }
+        closeCamera();
 }
 
 void MainWindow::openCamera()
@@ -127,7 +178,10 @@ void MainWindow::openCamera()
         // 设置是否启用自动曝光
         Nncam_put_AutoExpoEnable(mHcam, ui->autoExposureCheckBox->isChecked()? 1 : 0);
         // 启动摄像头
-//        startCamera();
+        startCamera();
+        // 修改按钮
+        ui->cameraButton->setText("关闭相机");
+        ui->searchCameraButton->setEnabled(false);
     }
 }
 
@@ -142,7 +196,7 @@ void MainWindow::closeCamera()
     mPData = nullptr;
 
     mTimer->stop();
-//    m_lbl_frame->clear();
+    ui->lblLabel->clear();
     ui->autoExposureCheckBox->setEnabled(false);
     ui->gainSlider->setEnabled(false);
     ui->gainSlider->setEnabled(false);
@@ -152,6 +206,8 @@ void MainWindow::closeCamera()
     ui->captureButton->setEnabled(false);
     ui->previewComboBox->setEnabled(false);
     ui->previewComboBox->clear();
+    ui->cameraButton->setText("打开相机");
+    ui->searchCameraButton->setEnabled(true);
 }
 
 void MainWindow::startCamera()
@@ -216,35 +272,126 @@ void MainWindow::startCamera()
     }
 }
 
-void handleExpoEvent()
+void MainWindow::eventCallBack(unsigned nEvent, void* pCallbackCtx)
 {
-
+    MainWindow* pThis = reinterpret_cast<MainWindow*>(pCallbackCtx);
+    emit pThis->evtCallback(nEvent);
 }
 
-void handleTempTintEvent()
+void MainWindow::handleImageEvent()
 {
-
+    unsigned width = 0, height = 0;
+    if (SUCCEEDED(Nncam_PullImage(mHcam, mPData, 24, &width, &height)))
+    {
+        QImage image(mPData, width, height, QImage::Format_RGB888);
+        QImage newimage = image.scaled(ui->videoLabel->width(), ui->videoLabel->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
+        ui->videoLabel->setPixmap(QPixmap::fromImage(newimage));
+    }
 }
 
+void MainWindow::handleExpoEvent()
+{
+    unsigned time = 0;
+    unsigned short gain = 0;
+    Nncam_get_ExpoTime(mHcam, &time);
+    Nncam_get_ExpoAGain(mHcam, &gain);
 
+    const QSignalBlocker blocker1(ui->exposureTimeSlider);
+    ui->exposureTimeSlider->setValue(int(time));
+    ui->exposureTimeNumLabel->setText(QString::number(time));
 
+    const QSignalBlocker blocker2(ui->gainSlider);
+    ui->gainSlider->setValue(int(gain));
+    ui->gainNumLabel->setText(QString::number(gain));
+}
 
+void MainWindow::handleTempTintEvent()
+{
+    int nTemp = 0, nTint = 0;
+    if (SUCCEEDED(Nncam_get_TempTint(mHcam, &nTemp, &nTint)))
+    {
+        const QSignalBlocker blocker1(ui->temperatureSlider);
+        ui->temperatureSlider->setValue(nTemp);
+        ui->temperatureNumLabel->setText(QString::number(nTemp));
 
+        const QSignalBlocker blocker2(ui->tintSlider);
+        ui->tintSlider->setValue(nTint);
+        ui->tintNumLabel->setText(QString::number(nTint));
+    }
+}
 
+void MainWindow::handleStillImageEvent()
+{
+    unsigned width = 0, height = 0;
+    if (SUCCEEDED(Nncam_PullStillImage(mHcam, nullptr, 24, &width, &height))) // peek
+    {
+        std::vector<uchar> vec(TDIBWIDTHBYTES(width * 24) * height);
+        if (SUCCEEDED(Nncam_PullStillImage(mHcam, &vec[0], 24, &width, &height)))
+        {
+            QImage image(&vec[0], width, height, QImage::Format_RGB888);
+            image.save(QString::asprintf("demoqt_%u.jpg", ++mCount));
+        }
+    }
+}
 
+void MainWindow::on_previewComboBox_currentIndexChanged(int index)
+{
+    if (mHcam)
+        Nncam_Stop(mHcam);
 
+    mRes = index;
+    mImgWidth = mCur.model->res[index].width;
+    mImgHeight = mCur.model->res[index].height;
 
+    if (mHcam)
+    {
+        Nncam_put_eSize(mHcam, static_cast<unsigned>(mRes));
+        startCamera();
+    }
+}
 
+void MainWindow::on_autoExposureCheckBox_stateChanged(bool state)
+{
+    if (mHcam)
+    {
+        Nncam_put_AutoExpoEnable(mHcam, state ? 1 : 0);
+        ui->exposureTimeSlider->setEnabled(!state);
+        ui->gainSlider->setEnabled(!state);
+    }
+}
 
+void MainWindow::on_exposureTimeSlider_valueChanged(int value)
+{
+    if (mHcam)
+    {
+        ui->exposureTargetNumLabel->setText(QString::number(value));
+        if (!ui->autoExposureCheckBox->isChecked())
+            Nncam_put_ExpoTime(mHcam, value);
+    }
+}
 
+void MainWindow::on_gainSlider_valueChanged(int value)
+{
+    if (mHcam)
+    {
+        ui->gainNumLabel->setText(QString::number(value));
+        if (!ui->autoExposureCheckBox->isChecked())
+            Nncam_put_ExpoAGain(mHcam, value);
+    }
+}
 
+void MainWindow::on_temperatureSlider_valueChanged(int value)
+{
+    mTemp = value;
+    if (mHcam)
+        Nncam_put_TempTint(mHcam, mTemp, mTint);
+    ui->temperatureNumLabel->setText(QString::number(value));
+}
 
-
-
-
-
-
-
-
-
-
+void MainWindow::on_tintSlider_valueChanged(int value)
+{
+    mTint = value;
+    if (mHcam)
+        Nncam_put_TempTint(mHcam, mTemp, mTint);
+    ui->tintNumLabel->setText(QString::number(value));
+}

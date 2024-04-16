@@ -27,6 +27,9 @@ public:
 
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent*) override;
+
 private slots:
     void on_captureButton_clicked();
 
@@ -40,8 +43,20 @@ private slots:
 
     void on_cameraButton_clicked();
 
+    void on_previewComboBox_currentIndexChanged(int index);
+
+    void on_autoExposureCheckBox_stateChanged(bool state);
+
+    void on_exposureTimeSlider_valueChanged(int value);
+
+    void on_gainSlider_valueChanged(int value);
+
+    void on_temperatureSlider_valueChanged(int value);
+
+    void on_tintSlider_valueChanged(int value);
+
 signals:
-    void evtCallback(int idx, unsigned nEvent);
+    void evtCallback(unsigned nEvent);
 
 private:
     void openCamera();
@@ -50,9 +65,15 @@ private:
 
     void startCamera();
 
+    void handleImageEvent();
+
     void handleExpoEvent();
 
     void handleTempTintEvent();
+
+    void handleStillImageEvent();
+
+    static void __stdcall eventCallBack(unsigned nEvent, void* pCallbackCtx);
 
     Ui::MainWindow *ui;
 };
