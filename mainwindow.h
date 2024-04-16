@@ -48,6 +48,12 @@ private:
 
     void closeCamera();
 
+    void startCamera();
+
+    void handleExpoEvent();
+
+    void handleTempTintEvent();
+
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H
