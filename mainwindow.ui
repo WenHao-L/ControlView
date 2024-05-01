@@ -569,7 +569,14 @@
      </widget>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="videoLayout" stretch="0,1">
+     <layout class="QVBoxLayout" name="rightLayout" stretch="1,0">
+      <item>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>-1</number>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QLabel" name="lblLabel">
         <property name="text">
@@ -577,17 +584,7 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QLabel" name="videoLabel">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
      </layout>
-    </item>
-    <item>
-     <widget class="QWidget" name="widget" native="true"/>
     </item>
    </layout>
   </widget>

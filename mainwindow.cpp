@@ -1,5 +1,7 @@
 #include <QMessageBox>
 #include <QTimer>
+#include <QFileDialog>
+#include <QDebug>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -12,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    updateMainStyle("myDark.qss");
 
     ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
     ui->tintNumLabel->setText(QString::number(NNCAM_TINT_DEF));
@@ -65,29 +68,29 @@ void MainWindow::closeEvent(QCloseEvent*)
 
 void MainWindow::on_captureButton_clicked()
 {
-//    if (mHcam)
-//    {
-//        if (0 == mCur.model->still)    // not support still image capture
-//        {
-//            if (mPData)
-//            {
-//                QImage image(mPData, mImgWidth, mImgHeight, QImage::Format_RGB888);
-//                image.save(QString::asprintf("demoqt_%u.jpg", ++mCount));
-//            }
-//        }
-//        else
-//        {
-//            QMenu menu;
-//            for (unsigned i = 0; i < mCur.model->still; ++i)
-//            {
-//                menu.addAction(QString::asprintf("%u*%u", mCur.model->res[i].width, mCur.model->res[i].height), this, [this, i](bool)
-//                               {
-//                                   Nncam_Snap(mCcam, i);
-//                               });
-//            }
-//            menu.exec(mapToGlobal(ui->captureButton->pos()));
-//        }
-//    }
+   if (mHcam)
+   {
+       if (0 == mCur.model->still)    // not support still image capture
+       {
+           if (mPData)
+           {
+               QImage image(mPData, mImgWidth, mImgHeight, QImage::Format_RGB888);
+               image.save(QString::asprintf("demoqt_%u.jpg", ++mCount));
+           }
+       }
+       else
+       {
+           QMenu menu;
+           for (unsigned i = 0; i < mCur.model->still; ++i)
+           {
+               menu.addAction(QString::asprintf("%u*%u", mCur.model->res[i].width, mCur.model->res[i].height), this, [this, i](bool)
+                              {
+                                  Nncam_Snap(mCcam, i);
+                              });
+           }
+           menu.exec(mapToGlobal(ui->captureButton->pos()));
+       }
+   }
 }
 
 void MainWindow::on_videoButton_clicked()
@@ -154,25 +157,52 @@ void MainWindow::on_cameraButton_clicked()
         closeCamera();
 }
 
+void MainWindow::initPreview()
+{
+    // 创建预览页面、视图和场景
+    previewTab = new QWidget();
+    previewView = new QGraphicsView();
+    previewScene = new QGraphicsScene();
+    pixmapItem = previewScene->addPixmap(framePixmap);
+
+    // 设置previewView的场景
+    previewView->setScene(previewScene);
+    // 将previewView添加到previewTab的布局中
+    QGridLayout *previewLayout = new QGridLayout(previewTab);
+    previewLayout->addWidget(previewView);
+    // 设置previewTab的布局
+    previewTab->setLayout(previewLayout);
+    // 将previewTab添加到tabWidget 中
+    ui->tabWidget->addTab(previewTab, "画面预览");
+}
+
 void MainWindow::openCamera()
 {
     // 打开摄像头
     mHcam = Nncam_Open(mCur.id);
     if (mHcam)
     {
+        // 初始化预览页面
+        initPreview();
         // 获取摄像头的分辨率信息
         Nncam_get_eSize(mHcam, (unsigned*)&mRes);
         // 获取当前分辨率下的图像宽度和高度
         mImgWidth = mCur.model->res[mRes].width;
         mImgHeight = mCur.model->res[mRes].height;
-        // 更新一个previewComboBox下拉列表组件（分辨率）
-        // 创建一个信号阻止器对象，用于暂时阻止ui->previewComboBox的信号发送，函数结束时销毁
-        const QSignalBlocker blocker(ui->previewComboBox);
+        // 更新previewComboBox、captureComboBox的下拉列表组件（分辨率）
+        // 创建信号阻止器对象，用于暂时阻止ui->previewComboBox、ui->captureComboBox的信号发送，函数结束时销毁
+        const QSignalBlocker blocker1(ui->previewComboBox);
+        const QSignalBlocker blocker2(ui->captureComboBox);
         ui->previewComboBox->clear();
         for (unsigned i = 0; i < mCur.model->preview; ++i)
+        {
             ui->previewComboBox->addItem(QString::asprintf("%u*%u", mCur.model->res[i].width, mCur.model->res[i].height));
+            ui->captureComboBox->addItem(QString::asprintf("%u*%u", mCur.model->res[i].width, mCur.model->res[i].height));
+        }
         ui->previewComboBox->setCurrentIndex(mRes);
         ui->previewComboBox->setEnabled(true);
+        ui->captureComboBox->setCurrentIndex(mRes);
+        ui->captureComboBox->setEnabled(true);
         // 设置摄像头选项，这里设置为RGB字节序，因为QImage使用RGB字节序
         Nncam_put_Option(mHcam, NNCAM_OPTION_BYTEORDER, 0);
         // 设置是否启用自动曝光
@@ -206,6 +236,8 @@ void MainWindow::closeCamera()
     ui->captureButton->setEnabled(false);
     ui->previewComboBox->setEnabled(false);
     ui->previewComboBox->clear();
+    ui->captureComboBox->setEnabled(false);
+    ui->captureComboBox->clear();
     ui->cameraButton->setText("打开相机");
     ui->searchCameraButton->setEnabled(true);
 }
@@ -245,6 +277,7 @@ void MainWindow::startCamera()
     {
         // 启用分辨率选择下拉框
         ui->previewComboBox->setEnabled(true);
+        ui->captureComboBox->setEnabled(true);
         // 启用自动曝光复选框
         ui->autoExposureCheckBox->setEnabled(true);
         // 根据相机模型启用自动白平衡按钮
@@ -284,8 +317,9 @@ void MainWindow::handleImageEvent()
     if (SUCCEEDED(Nncam_PullImage(mHcam, mPData, 24, &width, &height)))
     {
         QImage image(mPData, width, height, QImage::Format_RGB888);
-        QImage newimage = image.scaled(ui->videoLabel->width(), ui->videoLabel->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
-        ui->videoLabel->setPixmap(QPixmap::fromImage(newimage));
+        framePixmap = QPixmap::fromImage(image);
+        pixmapItem->setPixmap(framePixmap);
+        previewView->update();
     }
 }
 
@@ -394,4 +428,31 @@ void MainWindow::on_tintSlider_valueChanged(int value)
     if (mHcam)
         Nncam_put_TempTint(mHcam, mTemp, mTint);
     ui->tintNumLabel->setText(QString::number(value));
+}
+
+void MainWindow::updateMainStyle(QString style)
+{
+    // QSS文件初始化界面样式
+    QFile qss("qss/" + style);
+    if(qss.open(QFile::ReadOnly))
+    {
+        qDebug()<<"qss load";
+        QTextStream filetext(&qss);
+        QString stylesheet = filetext.readAll();
+        this->setStyleSheet(stylesheet);
+        qss.close();
+    }
+    else
+    {
+        qDebug() << "qss not load";
+        qss.setFileName("/qss/" + style);
+        if(qss.open(QFile::ReadOnly))
+        {
+            qDebug() << "qss load";
+            QTextStream filetext(&qss);
+            QString stylesheet = filetext.readAll();
+            this->setStyleSheet(stylesheet);
+            qss.close();
+        }
+    }
 }

@@ -2,6 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QWidget>
+#include <QGraphicsView>
+#include <QGraphicsScene>
+#include <QGraphicsPixmapItem>
+#include <QPixmap>
+#include <QString>
 #include <nncam.h>
 
 QT_BEGIN_NAMESPACE
@@ -11,16 +17,6 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    NncamDeviceV2 mCur;
-    HNncam        mHcam;
-    QTimer*       mTimer;
-    unsigned      mImgWidth;
-    unsigned      mImgHeight;
-    uchar*        mPData;
-    int           mRes;
-    int           mTemp;
-    int           mTint;
-    unsigned      mCount;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -59,6 +55,10 @@ signals:
     void evtCallback(unsigned nEvent);
 
 private:
+    void updateMainStyle(QString style);
+
+    void initPreview();
+
     void openCamera();
 
     void closeCamera();
@@ -76,5 +76,20 @@ private:
     static void __stdcall eventCallBack(unsigned nEvent, void* pCallbackCtx);
 
     Ui::MainWindow *ui;
+    NncamDeviceV2 mCur;
+    HNncam        mHcam;
+    QTimer*       mTimer;
+    unsigned      mImgWidth;
+    unsigned      mImgHeight;
+    uchar*        mPData;
+    int           mRes;
+    int           mTemp;
+    int           mTint;
+    unsigned      mCount;
+    QWidget*             previewTab;
+    QGraphicsView*       previewView;
+    QGraphicsScene*      previewScene;
+    QPixmap              framePixmap;
+    QGraphicsPixmapItem* pixmapItem;
 };
 #endif // MAINWINDOW_H
