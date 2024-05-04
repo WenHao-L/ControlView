@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QCloseEvent>
 #include <QWidget>
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -24,7 +25,7 @@ public:
     ~MainWindow();
 
 protected:
-    void closeEvent(QCloseEvent*) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void on_captureButton_clicked();
@@ -61,7 +62,7 @@ private:
 
     void openCamera();
 
-    void closeCamera();
+    int closeCamera();
 
     void startCamera();
 
@@ -73,23 +74,27 @@ private:
 
     void handleStillImageEvent();
 
+    void closeTab(int index);
+
     static void __stdcall eventCallBack(unsigned nEvent, void* pCallbackCtx);
 
     Ui::MainWindow *ui;
-    NncamDeviceV2 mCur;
-    HNncam        mHcam;
-    QTimer*       mTimer;
-    unsigned      mImgWidth;
-    unsigned      mImgHeight;
-    uchar*        mPData;
-    int           mRes;
-    int           mTemp;
-    int           mTint;
-    unsigned      mCount;
+    NncamDeviceV2 m_cur;
+    HNncam        m_hcam;
+    QTimer*       m_timer;
+    unsigned      m_imgWidth;
+    unsigned      m_imgHeight;
+    uchar*        m_pData;
+    int           m_res;
+    int           m_temp;
+    int           m_tint;
+    unsigned      m_count;
     QWidget*             previewTab;
     QGraphicsView*       previewView;
     QGraphicsScene*      previewScene;
     QPixmap              framePixmap;
     QGraphicsPixmapItem* pixmapItem;
+    QVector<QImage>      imageVector;
+    
 };
 #endif // MAINWINDOW_H
