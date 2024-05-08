@@ -24,6 +24,7 @@ SOURCES += \
 HEADERS += \
     mainwindow.h
     nncam.h
+    wmv.h
 
 FORMS += \
     mainwindow.ui

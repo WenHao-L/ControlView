@@ -3,12 +3,14 @@
 #include <QLabel>
 #include <QFileDialog>
 #include <QDebug>
+#include <windows.h>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , m_pWmvRecord(nullptr)
     , m_hcam(nullptr)
     , m_timer(new QTimer(this))
     , m_imgWidth(0), m_imgHeight(0), m_pData(nullptr)
@@ -109,9 +111,10 @@ void MainWindow::on_captureButton_clicked()
                 layout->setContentsMargins(0, 0, 0, 0);
                 newTab->setLayout(layout);
 
-                QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                QPixmap pixmap = QPixmap::fromImage(image);
+                // QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                // imageLabel->setScaledContents(true);
                 imageLabel->setPixmap(pixmap);
-                imageLabel->setScaledContents(true);
 
                 // 将新创建的QImage存储到vetor中，并添加标签页到tabWidget
                 ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
@@ -130,7 +133,48 @@ void MainWindow::on_captureButton_clicked()
 
 void MainWindow::on_videoButton_clicked()
 {
+    if (ui->videoButton->text() == "录像")
+    {
+        // 创建并打开文件对话框，让用户选择保存WMV文件的位置
+        QFileDialog dlg(this, tr("Save WMV File"), "", tr("WMV Files (*.wmv)"));
+        dlg.setFileMode(QFileDialog::AnyFile);
+        dlg.setAcceptMode(QFileDialog::AcceptSave);
 
+        if (dlg.exec() == QDialog::Accepted)
+        {
+            QString fileName = dlg.selectedFiles().first();
+            if (!fileName.isEmpty())
+            {
+                // 停止之前的录制
+                stopRecord();
+
+                // 设置比特率
+                DWORD dwBitrate = 4 * 1024 * 1024; // 比特率，可以根据需要修改
+
+                // 创建WmvRecorder对象
+                m_pWmvRecord = new CWmvRecord(static_cast<LONG>(m_imgWidth), static_cast<LONG>(m_imgHeight));
+                if (m_pWmvRecord->StartRecord(fileName.toStdWString().c_str(), dwBitrate))
+                {
+                    // 启用和禁用相应的UI组件
+                    ui->videoButton->setText("停止录像");
+                }
+                else
+                {
+                    QMessageBox::warning(this, tr("Record Error"), tr("Failed to start recording."));
+                    delete m_pWmvRecord;
+                    m_pWmvRecord = nullptr;
+                }
+            }
+        }
+    }
+    else
+    {
+        // 停止录制
+        stopRecord();
+
+        // 启用和禁用相应的UI组件
+        ui->videoButton->setText("录像");
+    }
 }
 
 void MainWindow::on_whileBalanceButton_clicked()
@@ -320,6 +364,9 @@ int MainWindow::closeCamera()
     delete[] m_pData;
     m_pData = nullptr;
 
+    delete[] m_pWmvRecord;
+    m_pWmvRecord = nullptr;
+
     // 清空图像向量
     imageVector.clear();
 
@@ -345,6 +392,7 @@ int MainWindow::closeCamera()
     ui->temperatureSlider->setEnabled(false);
     ui->tintSlider->setEnabled(false);
     ui->captureButton->setEnabled(false);
+    ui->videoButton->setEnabled(false);
     ui->previewComboBox->setEnabled(false);
     ui->previewComboBox->clear();
     ui->captureComboBox->setEnabled(false);
@@ -401,6 +449,8 @@ void MainWindow::startCamera()
         ui->tintSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
         // 启用捕获按钮
         ui->captureButton->setEnabled(true);
+        // 启用录像按钮
+        ui->videoButton->setEnabled(true);
 
         // 获取当前自动曝光的状态，并设置复选框的选中状态
         int bAuto = 0;
@@ -434,6 +484,9 @@ void MainWindow::handleImageEvent()
         pixmapItem->setPixmap(framePixmap);
         previewView->update();
     }
+
+    if (m_pWmvRecord)
+        m_pWmvRecord->WriteSample(m_pData);
 }
 
 void MainWindow::handleExpoEvent()
@@ -493,9 +546,10 @@ void MainWindow::handleStillImageEvent()
             layout->setContentsMargins(0, 0, 0, 0);
             newTab->setLayout(layout);
 
-            QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QPixmap pixmap = QPixmap::fromImage(image);
+            // QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            // imageLabel->setScaledContents(true);
             imageLabel->setPixmap(pixmap);
-            imageLabel->setScaledContents(true);
 
             // 将新创建的QImage存储到映射中，并添加标签页到tabWidget
             ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
@@ -590,6 +644,17 @@ void MainWindow::closeTab(int index)
             QWidget *widget = ui->tabWidget->widget(index);
             widget->deleteLater();
         }
+    }
+}
+
+void MainWindow::stopRecord()
+{
+    if (m_pWmvRecord)
+    {
+        m_pWmvRecord->StopRecord();
+
+        delete m_pWmvRecord;
+        m_pWmvRecord = nullptr;
     }
 }
 

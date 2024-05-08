@@ -10,6 +10,7 @@
 #include <QPixmap>
 #include <QString>
 #include <nncam.h>
+#include <wmv.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -76,9 +77,12 @@ private:
 
     void closeTab(int index);
 
+    void stopRecord();
+
     static void __stdcall eventCallBack(unsigned nEvent, void* pCallbackCtx);
 
     Ui::MainWindow *ui;
+    CWmvRecord*	  m_pWmvRecord;
     NncamDeviceV2 m_cur;
     HNncam        m_hcam;
     QTimer*       m_timer;
