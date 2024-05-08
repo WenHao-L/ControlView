@@ -1,4 +1,5 @@
 QT       += core gui
+QT       += multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -24,12 +25,14 @@ SOURCES += \
 HEADERS += \
     mainwindow.h
     nncam.h
-    wmv.h
 
 FORMS += \
     mainwindow.ui
 
 LIBS += -L$$PWD/x64 -lnncam
+
+CONFIG(debug, debug|release): LIBS += -L$$PWD/x64 -lopencv_world480d
+else:CONFIG(release, debug|release): LIBS += -L$$PWD/x64 -lopencv_world480
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

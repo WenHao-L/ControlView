@@ -3,14 +3,13 @@
 #include <QLabel>
 #include <QFileDialog>
 #include <QDebug>
-#include <windows.h>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_pWmvRecord(nullptr)
+    , m_isRecording(false)
     , m_hcam(nullptr)
     , m_timer(new QTimer(this))
     , m_imgWidth(0), m_imgHeight(0), m_pData(nullptr)
@@ -135,45 +134,39 @@ void MainWindow::on_videoButton_clicked()
 {
     if (ui->videoButton->text() == "录像")
     {
-        // 创建并打开文件对话框，让用户选择保存WMV文件的位置
-        QFileDialog dlg(this, tr("Save WMV File"), "", tr("WMV Files (*.wmv)"));
-        dlg.setFileMode(QFileDialog::AnyFile);
-        dlg.setAcceptMode(QFileDialog::AcceptSave);
-
-        if (dlg.exec() == QDialog::Accepted)
+        // 确保相机已经打开，并且有有效的图像数据
+        if (!m_hcam)
         {
-            QString fileName = dlg.selectedFiles().first();
-            if (!fileName.isEmpty())
+            QMessageBox::warning(this, tr("Record Error"), tr("Camera is not open."));
+            return;
+        }
+
+        QString videoFileName = QFileDialog::getSaveFileName(this, tr("Save Video"), "", tr("Video Files (*.mp4)"));
+        if (!videoFileName.isEmpty())
+        {
+            double fps = 30.0;
+            m_videoWriter.open(videoFileName.toStdString(), cv::VideoWriter::fourcc('X','2','6','4'), fps, cv::Size(m_imgWidth, m_imgHeight), true);
+
+            if (m_videoWriter.isOpened())
             {
-                // 停止之前的录制
-                stopRecord();
-
-                // 设置比特率
-                DWORD dwBitrate = 4 * 1024 * 1024; // 比特率，可以根据需要修改
-
-                // 创建WmvRecorder对象
-                m_pWmvRecord = new CWmvRecord(static_cast<LONG>(m_imgWidth), static_cast<LONG>(m_imgHeight));
-                if (m_pWmvRecord->StartRecord(fileName.toStdWString().c_str(), dwBitrate))
-                {
-                    // 启用和禁用相应的UI组件
-                    ui->videoButton->setText("停止录像");
-                }
-                else
-                {
-                    QMessageBox::warning(this, tr("Record Error"), tr("Failed to start recording."));
-                    delete m_pWmvRecord;
-                    m_pWmvRecord = nullptr;
-                }
+                ui->videoButton->setText("停止录像");
+                m_isRecording = true;
+            }
+            else
+            {
+                QMessageBox::warning(this, tr("Record Error"), tr("Failed to start recording."));
             }
         }
     }
     else
     {
         // 停止录制
-        stopRecord();
-
-        // 启用和禁用相应的UI组件
-        ui->videoButton->setText("录像");
+        if (m_isRecording)
+        {
+            m_videoWriter.release();
+            ui->videoButton->setText("录像");
+            m_isRecording = false;
+        }
     }
 }
 
@@ -364,8 +357,12 @@ int MainWindow::closeCamera()
     delete[] m_pData;
     m_pData = nullptr;
 
-    delete[] m_pWmvRecord;
-    m_pWmvRecord = nullptr;
+    if (m_isRecording)
+    {
+        m_videoWriter.release();
+        ui->videoButton->setText("录像");
+        m_isRecording = false;
+    }
 
     // 清空图像向量
     imageVector.clear();
@@ -483,10 +480,14 @@ void MainWindow::handleImageEvent()
         framePixmap = QPixmap::fromImage(image);
         pixmapItem->setPixmap(framePixmap);
         previewView->update();
-    }
 
-    if (m_pWmvRecord)
-        m_pWmvRecord->WriteSample(m_pData);
+        if (m_isRecording)
+        {
+            cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, const_cast<uchar*>(image.bits()), image.bytesPerLine());
+            cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
+            m_videoWriter.write(mat);
+        }
+    }
 }
 
 void MainWindow::handleExpoEvent()
@@ -647,16 +648,16 @@ void MainWindow::closeTab(int index)
     }
 }
 
-void MainWindow::stopRecord()
-{
-    if (m_pWmvRecord)
-    {
-        m_pWmvRecord->StopRecord();
+// void MainWindow::stopRecord()
+// {
+//     if (m_pWmvRecord)
+//     {
+//         m_pWmvRecord->StopRecord();
 
-        delete m_pWmvRecord;
-        m_pWmvRecord = nullptr;
-    }
-}
+//         delete m_pWmvRecord;
+//         m_pWmvRecord = nullptr;
+//     }
+// }
 
 void MainWindow::updateMainStyle(QString style)
 {

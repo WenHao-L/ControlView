@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <opencv2/opencv.hpp>
 #include <QMainWindow>
 #include <QCloseEvent>
 #include <QWidget>
@@ -10,7 +11,6 @@
 #include <QPixmap>
 #include <QString>
 #include <nncam.h>
-#include <wmv.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -77,12 +77,11 @@ private:
 
     void closeTab(int index);
 
-    void stopRecord();
-
     static void __stdcall eventCallBack(unsigned nEvent, void* pCallbackCtx);
 
     Ui::MainWindow *ui;
-    CWmvRecord*	  m_pWmvRecord;
+    cv::VideoWriter m_videoWriter;
+    bool m_isRecording;
     NncamDeviceV2 m_cur;
     HNncam        m_hcam;
     QTimer*       m_timer;
