@@ -19,14 +19,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += ./inc
 
 SOURCES += \
+    login.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    login.h \
     mainwindow.h
     nncam.h
 
 FORMS += \
+    login.ui \
     mainwindow.ui
 
 LIBS += -L$$PWD/x64 -lnncam
@@ -38,3 +41,7 @@ else:CONFIG(release, debug|release): LIBS += -L$$PWD/x64 -lopencv_world480
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    resource/resource.qrc \
+    resource/qdarkstyle/dark/darkstyle.qrc

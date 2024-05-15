@@ -29,6 +29,10 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
+    void on_searchCameraButton_clicked();
+
+    void on_cameraButton_clicked();
+
     void on_captureButton_clicked();
 
     void on_videoButton_clicked();
@@ -36,10 +40,6 @@ private slots:
     void on_whileBalanceButton_clicked();
 
     void on_defaultValueButton_clicked();
-
-    void on_searchCameraButton_clicked();
-
-    void on_cameraButton_clicked();
 
     void on_previewComboBox_currentIndexChanged(int index);
 
@@ -53,12 +53,12 @@ private slots:
 
     void on_tintSlider_valueChanged(int value);
 
+    void on_actionSerial_triggered(bool checked);
+
 signals:
     void evtCallback(unsigned nEvent);
 
 private:
-    void updateMainStyle(QString style);
-
     void initPreview();
 
     void openCamera();

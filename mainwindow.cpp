@@ -16,8 +16,20 @@ MainWindow::MainWindow(QWidget *parent)
     , m_res(0), m_temp(NNCAM_TEMP_DEF), m_tint(NNCAM_TINT_DEF), m_count(0)
 {
     ui->setupUi(this);
-    updateMainStyle("myDark.qss");
 
+    QFile qss(":qdarkstyle/dark/darkstyle.qss");
+
+    if(qss.open(QFile::ReadOnly))
+    {
+        QTextStream filetext(&qss);
+        QString stylesheet = filetext.readAll();
+        this->setStyleSheet(stylesheet);
+        qss.close();
+    }
+
+    ui->serialWidget->setVisible(false);
+
+    // 设置白平衡参数
     ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
     ui->tintNumLabel->setText(QString::number(NNCAM_TINT_DEF));
     ui->temperatureSlider->setRange(NNCAM_TEMP_MIN, NNCAM_TEMP_MAX);
@@ -50,6 +62,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
+    // 定时器更新帧率显示
     connect(m_timer, &QTimer::timeout, this, [this]()
     {
         unsigned nFrame = 0, nTime = 0, nTotalFrame = 0;
@@ -88,6 +101,55 @@ void MainWindow::closeEvent(QCloseEvent* event)
         m_timer = nullptr;
     }
 
+}
+
+void MainWindow::on_searchCameraButton_clicked()
+{
+    // 如果相机已打开，则关闭相机
+    if (m_hcam)
+    {
+        closeCamera();
+        // unsigned count = 0;
+    }
+    else
+    {
+        // 清空相机列表
+        ui->cameraComboBox->clear();
+        // 枚举可用相机设备
+        NncamDeviceV2 arr[NNCAM_MAX] = { 0 };
+        unsigned count = Nncam_EnumV2(arr);
+        // 如果没有找到相机，则显示警告信息
+        if (0 == count)
+            QMessageBox::warning(this, "Warning", "No camera found.");
+        // 如果找到一个相机，则获取该相机并添加到相机列表
+        else if (1 == count)
+        {
+            m_cur = arr[0];
+            ui->cameraComboBox->addItem(QString::fromWCharArray(arr[0].displayname));
+            ui->cameraComboBox->setEnabled(true);
+            ui->cameraButton->setEnabled(true);
+        }
+        // 如果找到多个相机，则获取所有相机并添加到相机列表，获取第一个相机
+        else
+        {
+            for (unsigned i = 0; i < count; ++i)
+            {
+                ui->cameraComboBox->addItem(QString::fromWCharArray(arr[i].displayname));
+            }
+            ui->cameraComboBox->setCurrentIndex(0);
+            m_cur = arr[0];
+            ui->cameraComboBox->setEnabled(true);
+            ui->cameraButton->setEnabled(true);
+        }
+    }
+}
+
+void MainWindow::on_cameraButton_clicked()
+{
+    if (ui->cameraButton->text() == "打开相机")
+        openCamera();
+    else
+        closeCamera();
 }
 
 void MainWindow::on_captureButton_clicked()
@@ -180,53 +242,71 @@ void MainWindow::on_defaultValueButton_clicked()
 
 }
 
-void MainWindow::on_searchCameraButton_clicked()
+void MainWindow::on_previewComboBox_currentIndexChanged(int index)
 {
-    // 如果相机已打开，则关闭相机
+    if (m_hcam)
+        Nncam_Stop(m_hcam);
+
+    m_res = index;
+    m_imgWidth = m_cur.model->res[index].width;
+    m_imgHeight = m_cur.model->res[index].height;
+
     if (m_hcam)
     {
-        closeCamera();
-        // unsigned count = 0;
-    }
-    else
-    {
-        // 清空相机列表
-        ui->cameraComboBox->clear();
-        // 枚举可用相机设备
-        NncamDeviceV2 arr[NNCAM_MAX] = { 0 };
-        unsigned count = Nncam_EnumV2(arr);
-        // 如果没有找到相机，则显示警告信息
-        if (0 == count)
-            QMessageBox::warning(this, "Warning", "No camera found.");
-        // 如果找到一个相机，则获取该相机并添加到相机列表
-        else if (1 == count)
-        {
-            m_cur = arr[0];
-            ui->cameraComboBox->addItem(QString::fromWCharArray(arr[0].displayname));
-            ui->cameraComboBox->setEnabled(true);
-            ui->cameraButton->setEnabled(true);
-        }
-        // 如果找到多个相机，则获取所有相机并添加到相机列表，获取第一个相机
-        else
-        {
-            for (unsigned i = 0; i < count; ++i)
-            {
-                ui->cameraComboBox->addItem(QString::fromWCharArray(arr[i].displayname));
-            }
-            ui->cameraComboBox->setCurrentIndex(0);
-            m_cur = arr[0];
-            ui->cameraComboBox->setEnabled(true);
-            ui->cameraButton->setEnabled(true);
-        }
+        Nncam_put_eSize(m_hcam, static_cast<unsigned>(m_res));
+        startCamera();
     }
 }
 
-void MainWindow::on_cameraButton_clicked()
+void MainWindow::on_autoExposureCheckBox_stateChanged(bool state)
 {
-    if (ui->cameraButton->text() == "打开相机")
-        openCamera();
-    else
-        closeCamera();
+    if (m_hcam)
+    {
+        Nncam_put_AutoExpoEnable(m_hcam, state ? 1 : 0);
+        ui->exposureTimeSlider->setEnabled(!state);
+        ui->gainSlider->setEnabled(!state);
+    }
+}
+
+void MainWindow::on_exposureTimeSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        ui->exposureTargetNumLabel->setText(QString::number(value));
+        if (!ui->autoExposureCheckBox->isChecked())
+            Nncam_put_ExpoTime(m_hcam, value);
+    }
+}
+
+void MainWindow::on_gainSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        ui->gainNumLabel->setText(QString::number(value));
+        if (!ui->autoExposureCheckBox->isChecked())
+            Nncam_put_ExpoAGain(m_hcam, value);
+    }
+}
+
+void MainWindow::on_temperatureSlider_valueChanged(int value)
+{
+    m_temp = value;
+    if (m_hcam)
+        Nncam_put_TempTint(m_hcam, m_temp, m_tint);
+    ui->temperatureNumLabel->setText(QString::number(value));
+}
+
+void MainWindow::on_tintSlider_valueChanged(int value)
+{
+    m_tint = value;
+    if (m_hcam)
+        Nncam_put_TempTint(m_hcam, m_temp, m_tint);
+    ui->tintNumLabel->setText(QString::number(value));
+}
+
+void MainWindow::on_actionSerial_triggered(bool checked)
+{
+    ui->serialWidget->setVisible(checked);
 }
 
 void MainWindow::initPreview()
@@ -299,6 +379,10 @@ void MainWindow::openCamera()
         // 修改按钮
         ui->cameraButton->setText("关闭相机");
         ui->searchCameraButton->setEnabled(false);
+
+        // 白平衡滑块使能
+        ui->temperatureSlider->setEnabled(true);
+        ui->tintSlider->setEnabled(true);
     }
 }
 
@@ -382,20 +466,28 @@ int MainWindow::closeCamera()
     }
 
     m_timer->stop();
+
     ui->lblLabel->clear();
-    ui->autoExposureCheckBox->setEnabled(false);
-    ui->gainSlider->setEnabled(false);
-    ui->whileBalanceButton->setEnabled(false);
-    ui->temperatureSlider->setEnabled(false);
-    ui->tintSlider->setEnabled(false);
+
+    ui->cameraButton->setText("打开相机");
+    ui->searchCameraButton->setEnabled(true);
+
     ui->captureButton->setEnabled(false);
     ui->videoButton->setEnabled(false);
     ui->previewComboBox->setEnabled(false);
     ui->previewComboBox->clear();
     ui->captureComboBox->setEnabled(false);
     ui->captureComboBox->clear();
-    ui->cameraButton->setText("打开相机");
-    ui->searchCameraButton->setEnabled(true);
+
+    ui->autoExposureCheckBox->setEnabled(false);
+    ui->exposureTargetSlider->setEnabled(false);
+    ui->exposureTimeSlider->setEnabled(false);
+    ui->gainSlider->setEnabled(false);
+
+    ui->whileBalanceButton->setEnabled(false);
+    ui->defaultValueButton->setEnabled(false);
+    ui->temperatureSlider->setEnabled(false);
+    ui->tintSlider->setEnabled(false);
 
     return 1;
 }
@@ -559,68 +651,6 @@ void MainWindow::handleStillImageEvent()
     }
 }
 
-void MainWindow::on_previewComboBox_currentIndexChanged(int index)
-{
-    if (m_hcam)
-        Nncam_Stop(m_hcam);
-
-    m_res = index;
-    m_imgWidth = m_cur.model->res[index].width;
-    m_imgHeight = m_cur.model->res[index].height;
-
-    if (m_hcam)
-    {
-        Nncam_put_eSize(m_hcam, static_cast<unsigned>(m_res));
-        startCamera();
-    }
-}
-
-void MainWindow::on_autoExposureCheckBox_stateChanged(bool state)
-{
-    if (m_hcam)
-    {
-        Nncam_put_AutoExpoEnable(m_hcam, state ? 1 : 0);
-        ui->exposureTimeSlider->setEnabled(!state);
-        ui->gainSlider->setEnabled(!state);
-    }
-}
-
-void MainWindow::on_exposureTimeSlider_valueChanged(int value)
-{
-    if (m_hcam)
-    {
-        ui->exposureTargetNumLabel->setText(QString::number(value));
-        if (!ui->autoExposureCheckBox->isChecked())
-            Nncam_put_ExpoTime(m_hcam, value);
-    }
-}
-
-void MainWindow::on_gainSlider_valueChanged(int value)
-{
-    if (m_hcam)
-    {
-        ui->gainNumLabel->setText(QString::number(value));
-        if (!ui->autoExposureCheckBox->isChecked())
-            Nncam_put_ExpoAGain(m_hcam, value);
-    }
-}
-
-void MainWindow::on_temperatureSlider_valueChanged(int value)
-{
-    m_temp = value;
-    if (m_hcam)
-        Nncam_put_TempTint(m_hcam, m_temp, m_tint);
-    ui->temperatureNumLabel->setText(QString::number(value));
-}
-
-void MainWindow::on_tintSlider_valueChanged(int value)
-{
-    m_tint = value;
-    if (m_hcam)
-        Nncam_put_TempTint(m_hcam, m_temp, m_tint);
-    ui->tintNumLabel->setText(QString::number(value));
-}
-
 void MainWindow::closeTab(int index)
 {
     if (index == 0)
@@ -648,40 +678,3 @@ void MainWindow::closeTab(int index)
     }
 }
 
-// void MainWindow::stopRecord()
-// {
-//     if (m_pWmvRecord)
-//     {
-//         m_pWmvRecord->StopRecord();
-
-//         delete m_pWmvRecord;
-//         m_pWmvRecord = nullptr;
-//     }
-// }
-
-void MainWindow::updateMainStyle(QString style)
-{
-    // QSS文件初始化界面样式
-    QFile qss("qss/" + style);
-    if(qss.open(QFile::ReadOnly))
-    {
-        qDebug()<<"qss load";
-        QTextStream filetext(&qss);
-        QString stylesheet = filetext.readAll();
-        this->setStyleSheet(stylesheet);
-        qss.close();
-    }
-    else
-    {
-        qDebug() << "qss not load";
-        qss.setFileName("/qss/" + style);
-        if(qss.open(QFile::ReadOnly))
-        {
-            qDebug() << "qss load";
-            QTextStream filetext(&qss);
-            QString stylesheet = filetext.readAll();
-            this->setStyleSheet(stylesheet);
-            qss.close();
-        }
-    }
-}
