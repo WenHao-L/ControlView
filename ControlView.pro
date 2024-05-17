@@ -1,5 +1,10 @@
+win32-msvc* {
+    QMAKE_CXXFLAGS += /source-charset:utf-8 /execution-charset:utf-8
+}
+
 QT       += core gui
-QT       += multimedia
+#QT       += multimedia
+QT       += serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -19,11 +24,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += ./inc
 
 SOURCES += \
+    crc16.cpp \
+    gaugepanel.cpp \
     login.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    CustomTitleBar.h \
+    crc16.h \
+    gaugepanel.h \
     login.h \
     mainwindow.h
     nncam.h
@@ -43,5 +53,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
-    resource/resource.qrc \
-    resource/qdarkstyle/dark/darkstyle.qrc
+    resource/qdarkstyle/dark/darkstyle.qrc \
+    resource/resource.qrc

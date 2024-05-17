@@ -2,7 +2,22 @@
     <qresource prefix="/images">
         <file>images/control.png</file>
         <file>images/quit.png</file>
-        <file>images/tsg.jpg</file>
         <file>images/logo.png</file>
+        <file>images/camera_list.png</file>
+        <file>images/open_camera.png</file>
+        <file>images/resolution.png</file>
+        <file>images/search_camera.png</file>
+        <file>images/video.png</file>
+        <file>images/while_balance.png</file>
+        <file>images/capture.png</file>
+        <file>images/open_serial.png</file>
+        <file>images/search_serial.png</file>
+        <file>images/capture_disable.png</file>
+        <file>images/open_camera_disable.png</file>
+        <file>images/open_serial_disable.png</file>
+        <file>images/search_camera_disable.png</file>
+        <file>images/search_serial_disable.png</file>
+        <file>images/video_disbale.png</file>
+        <file>images/gdut.jpg</file>
     </qresource>
 </RCC>

@@ -34,7 +34,9 @@ void Login::on_loginButton_clicked()
     if(ui->accountEdit->text() == "gdut" && ui->passwordEdit->text() == "123456"){
         this->close();
         MainWindow *w = new MainWindow;
-        w->show();
+        w->setWindowTitle(u8"单细胞仪器");
+        w->setWindowIcon(QIcon(":/images/images/logo.png"));
+        w->showMaximized();
     }else{
         QMessageBox::warning(this, "Warning", "The account number or password is incorrect.");
         ui->accountEdit->clear();

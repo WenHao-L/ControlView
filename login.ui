@@ -70,9 +70,9 @@
       </size>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-image:url(:/images/images/tsg.jpg);
+      <string notr="true">background-image:url(:/images/images/gdut.jpg);
 background-repeat:no-repeat;
-background-position: left center;
+background-position:right center;
 
 
 
@@ -100,6 +100,7 @@ background-position: left center;
      <property name="font">
       <font>
        <family>Microsoft YaHei</family>
+       <pointsize>10</pointsize>
        <stylestrategy>PreferAntialias</stylestrategy>
       </font>
      </property>
@@ -113,7 +114,7 @@ background-position: left center;
       <property name="geometry">
        <rect>
         <x>70</x>
-        <y>380</y>
+        <y>400</y>
         <width>161</width>
         <height>37</height>
        </rect>
@@ -187,6 +188,7 @@ padding-top:2px;
          <property name="font">
           <font>
            <family>Microsoft YaHei</family>
+           <pointsize>10</pointsize>
            <stylestrategy>PreferAntialias</stylestrategy>
           </font>
          </property>
@@ -218,6 +220,7 @@ padding-top:2px;
          <property name="font">
           <font>
            <family>Microsoft YaHei</family>
+           <pointsize>9</pointsize>
            <stylestrategy>PreferAntialias</stylestrategy>
           </font>
          </property>
@@ -250,7 +253,7 @@ background-size: contain</string>
       <property name="geometry">
        <rect>
         <x>90</x>
-        <y>60</y>
+        <y>50</y>
         <width>128</width>
         <height>128</height>
        </rect>
@@ -280,7 +283,7 @@ background-image:url(:/images/images/logo.png)
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>230</y>
+        <y>270</y>
         <width>250</width>
         <height>30</height>
        </rect>
@@ -305,7 +308,7 @@ background-image:url(:/images/images/logo.png)
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>300</y>
+        <y>340</y>
         <width>250</width>
         <height>30</height>
        </rect>
@@ -330,7 +333,7 @@ background-image:url(:/images/images/logo.png)
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>270</y>
+        <y>310</y>
         <width>69</width>
         <height>19</height>
        </rect>
@@ -343,7 +346,7 @@ background-image:url(:/images/images/logo.png)
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>200</y>
+        <y>240</y>
         <width>69</width>
         <height>19</height>
        </rect>
@@ -352,11 +355,31 @@ background-image:url(:/images/images/logo.png)
        <string>账号</string>
       </property>
      </widget>
+     <widget class="QLabel" name="title">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>190</y>
+        <width>111</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">#title {
+color: rgba(85, 170, 255, 225);
+font-weight: bold;
+}</string>
+      </property>
+      <property name="text">
+       <string>单细胞仪器</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
     </widget>
    </item>
   </layout>
-  <zorder>image</zorder>
-  <zorder>widget</zorder>
  </widget>
  <tabstops>
   <tabstop>loginButton</tabstop>

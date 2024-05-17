@@ -5,6 +5,8 @@
 #include <QDebug>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "crc16.h"
+//#include "CustomTitleBar.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -14,8 +16,18 @@ MainWindow::MainWindow(QWidget *parent)
     , m_timer(new QTimer(this))
     , m_imgWidth(0), m_imgHeight(0), m_pData(nullptr)
     , m_res(0), m_temp(NNCAM_TEMP_DEF), m_tint(NNCAM_TINT_DEF), m_count(0)
+    , m_serial(new QSerialPort(this))
 {
     ui->setupUi(this);
+    // setWindowFlags(Qt::FramelessWindowHint);
+
+    // 仪表盘设置
+    ui->gaugePanelWidget1->setValueRange(100.0);
+    ui->gaugePanelWidget2->setValueRange(200.0);
+    ui->gaugePanelWidget1->setValueStep(1.0);
+    ui->gaugePanelWidget2->setValueStep(1.0);
+    ui->gaugePanelWidget1->setValue(0);
+    ui->gaugePanelWidget2->setValue(0);
 
     QFile qss(":qdarkstyle/dark/darkstyle.qss");
 
@@ -101,6 +113,13 @@ void MainWindow::closeEvent(QCloseEvent* event)
         m_timer = nullptr;
     }
 
+    if (m_serial)
+    {
+        if (m_serial->isOpen())  //原先串口打开，则关闭串口
+            m_serial->close();
+        delete[] m_serial;
+        m_serial = nullptr;
+    }
 }
 
 void MainWindow::on_searchCameraButton_clicked()
@@ -258,7 +277,7 @@ void MainWindow::on_previewComboBox_currentIndexChanged(int index)
     }
 }
 
-void MainWindow::on_autoExposureCheckBox_stateChanged(bool state)
+void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
 {
     if (m_hcam)
     {
@@ -678,3 +697,202 @@ void MainWindow::closeTab(int index)
     }
 }
 
+
+void MainWindow::on_searchSerialButton_clicked()
+{
+    if (m_serial)
+    {
+        if (m_serial->isOpen())  //原先串口打开，则关闭串口
+            m_serial->close();
+        delete[] m_serial;
+        m_serial = nullptr;
+    }
+
+    //先清除所有串口列表
+    ui->portBox->clear();
+
+    //光标移动到结尾
+    ui->serialMessageEdit->moveCursor(QTextCursor::End);
+    ui->serialMessageEdit->insertPlainText(u8"\r\n串口初始化：\r\n");
+
+
+    foreach(const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
+    {
+        m_serial = new QSerialPort;
+        m_serial->setPort(info);
+
+        if(m_serial->open(QIODevice::ReadWrite))
+        {
+            ui->serialMessageEdit->insertPlainText(u8"可用："+m_serial->portName()+"\r\n");
+            ui->portBox->addItem(m_serial->portName());
+            m_serial->close();
+        }
+        else
+        {
+            ui->serialMessageEdit->insertPlainText(u8"不可用："+m_serial->portName()+"\r\n");
+        }
+    }
+
+    ui->serialMessageEdit->moveCursor(QTextCursor::End);        //光标移动到结尾
+
+    if (ui->portBox->count() > 0)
+        ui->openSerialButton->setEnabled(true);
+}
+
+
+void MainWindow::on_openSerialButton_clicked()
+{
+    //尝试打开串口
+    if(ui->openSerialButton->text() == tr(u8"打开串口"))
+    {
+        if(ui->portBox->currentText() == "" )
+        {
+            QMessageBox::warning(NULL, u8"警告", u8"无可开启串口！\r\n\r\n");
+            return;
+        }
+
+        m_serial = new QSerialPort;
+        //设置串口名
+        m_serial->setPortName(ui->portBox->currentText());
+        //设置波特率
+        m_serial->setBaudRate(QSerialPort::Baud9600);
+        //设置数据位
+        m_serial->setDataBits(QSerialPort::Data8);
+        //设置校验位
+        m_serial->setParity(QSerialPort::NoParity);
+        //设置停止位
+        m_serial->setStopBits(QSerialPort::OneStop);
+        //设置流控制
+        m_serial->setFlowControl(QSerialPort::NoFlowControl);  //设置为无流控制
+
+        //打开串口
+        if (!m_serial->open(QIODevice::ReadWrite)) {
+            QMessageBox::warning(NULL, u8"警告", u8"串口打开失败！\r\n\r\n");
+            return;
+        }
+
+        //使能
+        ui->portBox->setEnabled(false);
+        ui->openSerialButton->setText(u8"关闭串口");
+        ui->openSerialButton->setStyleSheet("background-color:red");
+        ui->highSpeedRadioButton->setEnabled(true);
+        ui->mediumSpeedRadioButton->setEnabled(true);
+        ui->lowSpeedRadioButton->setEnabled(true);
+        ui->rAxisForwardButton->setEnabled(true);
+        ui->rAxisBackwardButton->setEnabled(true);
+        ui->tAxisForwardButton->setEnabled(true);
+        ui->tAxisBackwardButton->setEnabled(true);
+
+        //连接信号和槽函数，串口有数据可读时，调用ReadData()函数读取数据并处理。
+        connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readSerialData);
+//        connect(m_serial, &QSerialPort::errorOccurred, this, &MainWindow::handleError);
+    }
+    else
+    {
+        if (m_serial->isOpen())  //原先串口打开，则关闭串口
+            m_serial->close();
+
+        //释放串口
+        delete[] m_serial;
+        m_serial = nullptr;
+
+        //恢复使能
+        ui->portBox->setEnabled(true);
+        ui->openSerialButton->setText(u8"打开串口");
+        ui->openSerialButton->setStyleSheet("");
+    }
+}
+
+
+QByteArray MainWindow::createPacket(const QByteArray &data) {
+    QByteArray packet;
+    packet.append(0x55);  // Start byte
+    packet.append(data);
+
+    uint16_t crc = calculateCRC16(data);
+    packet.append(reinterpret_cast<const char*>(&crc), sizeof(crc));
+
+    packet.append(0xAA);  // End byte
+    return packet;
+}
+
+
+void MainWindow::readSerialData()
+{
+    QByteArray data = m_serial->readAll();
+    processReceivedData(data);
+}
+
+
+uint16_t MainWindow::calculateCRC16(const QByteArray &data) {
+    return CRC16::calculate(data);
+}
+
+
+void MainWindow::processReceivedData(const QByteArray &data) {
+    // Verify packet structure
+    if (data.size() < 16 || data.at(0) != 0x55 || data.at(data.size() - 1) != 0xAA) {
+        // Handle invalid packet
+        return;
+    }
+
+    QByteArray receivedData = data.mid(1, data.size() - 4);
+    uint16_t receivedCrc = *reinterpret_cast<const uint16_t*>(data.constData() + data.size() - 3);
+    uint16_t calculatedCrc = calculateCRC16(receivedData);
+
+    if (receivedCrc != calculatedCrc) {
+        // Handle CRC error
+        return;
+    }
+
+    // Process valid data
+}
+
+
+void MainWindow::on_rAxisForwardButton_clicked()
+{
+    if (m_serial->isOpen())
+    {
+        QByteArray data;
+        data = QByteArray::fromHex("0100000000000000");
+        QByteArray packet = createPacket(data);
+        m_serial->write(packet);
+    }
+}
+
+
+
+void MainWindow::on_rAxisBackwardButton_clicked()
+{
+    if (m_serial->isOpen())
+    {
+        QByteArray data;
+        data = QByteArray::fromHex("0200000000000000");
+        QByteArray packet = createPacket(data);
+        m_serial->write(packet);
+    }
+}
+
+
+void MainWindow::on_tAxisForwardButton_clicked()
+{
+    if (m_serial->isOpen())
+    {
+        QByteArray data;
+        data = QByteArray::fromHex("0300000000000000");
+        QByteArray packet = createPacket(data);
+        m_serial->write(packet);
+    }
+}
+
+
+void MainWindow::on_tAxisBackwardButton_clicked()
+{
+    if (m_serial->isOpen())
+    {
+        QByteArray data;
+        data = QByteArray::fromHex("0400000000000000");
+        QByteArray packet = createPacket(data);
+        m_serial->write(packet);
+    }
+}

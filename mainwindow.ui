@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1033</width>
-    <height>739</height>
+    <width>1290</width>
+    <height>991</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -31,13 +31,13 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>285</width>
+        <width>295</width>
         <height>0</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>285</width>
+        <width>295</width>
         <height>16777215</height>
        </size>
       </property>
@@ -73,22 +73,26 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>285</width>
-         <height>100</height>
+         <width>295</width>
+         <height>110</height>
         </rect>
        </property>
        <property name="minimumSize">
         <size>
-         <width>285</width>
-         <height>100</height>
+         <width>295</width>
+         <height>110</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>285</width>
-         <height>100</height>
+         <width>295</width>
+         <height>110</height>
         </size>
        </property>
+       <attribute name="icon">
+        <iconset resource="resource/resource.qrc">
+         <normaloff>:/images/images/camera_list.png</normaloff>:/images/images/camera_list.png</iconset>
+       </attribute>
        <attribute name="label">
         <string>相机列表</string>
        </attribute>
@@ -104,8 +108,38 @@
          <layout class="QHBoxLayout" name="cameraLayout">
           <item>
            <widget class="QPushButton" name="searchCameraButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>搜索相机</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normalon>:/images/images/search_camera.png</normalon>
+              <disabledoff>:/images/images/search_camera_disable.png</disabledoff>
+              <disabledon>:/images/images/search_camera_disable.png</disabledon>
+             </iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
             </property>
             <property name="checkable">
              <bool>false</bool>
@@ -120,8 +154,32 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
             <property name="text">
              <string>打开相机</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normalon>:/images/images/open_camera.png</normalon>
+              <disabledoff>:/images/images/open_camera_disable.png</disabledoff>
+             </iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
             </property>
             <property name="autoExclusive">
              <bool>false</bool>
@@ -137,22 +195,26 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>285</width>
-         <height>400</height>
+         <width>295</width>
+         <height>410</height>
         </rect>
        </property>
        <property name="minimumSize">
         <size>
-         <width>285</width>
-         <height>400</height>
+         <width>295</width>
+         <height>410</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>285</width>
-         <height>400</height>
+         <width>295</width>
+         <height>410</height>
         </size>
        </property>
+       <attribute name="icon">
+        <iconset resource="resource/resource.qrc">
+         <normaloff>:/images/images/resolution.png</normaloff>:/images/images/resolution.png</iconset>
+       </attribute>
        <attribute name="label">
         <string>捕获与分辨率</string>
        </attribute>
@@ -164,8 +226,32 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
             <property name="text">
              <string>捕获</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normalon>:/images/images/capture.png</normalon>
+              <disabledoff>:/images/images/capture_disable.png</disabledoff>
+             </iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -174,8 +260,32 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
             <property name="text">
              <string>录像</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normalon>:/images/images/video.png</normalon>
+              <disabledoff>:/images/images/video_disbale.png</disabledoff>
+             </iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -270,6 +380,9 @@
          <layout class="QHBoxLayout" name="modeLayout">
           <item>
            <widget class="QRadioButton" name="videoRadioButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>视频模式</string>
             </property>
@@ -280,6 +393,9 @@
           </item>
           <item>
            <widget class="QRadioButton" name="triggerRadioButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>触发模式</string>
             </property>
@@ -427,22 +543,26 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>285</width>
-         <height>230</height>
+         <width>295</width>
+         <height>250</height>
         </rect>
        </property>
        <property name="minimumSize">
         <size>
-         <width>285</width>
-         <height>210</height>
+         <width>295</width>
+         <height>250</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>285</width>
-         <height>230</height>
+         <width>295</width>
+         <height>250</height>
         </size>
        </property>
+       <attribute name="icon">
+        <iconset resource="resource/resource.qrc">
+         <normaloff>:/images/images/while_balance.png</normaloff>:/images/images/while_balance.png</iconset>
+       </attribute>
        <attribute name="label">
         <string>白平衡</string>
        </attribute>
@@ -629,7 +749,7 @@
           </size>
          </property>
          <property name="title">
-          <string>串口通信</string>
+          <string>微位移控制系统</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
@@ -678,6 +798,9 @@
               </item>
               <item>
                <widget class="QComboBox" name="portBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -697,7 +820,46 @@
             <item>
              <layout class="QHBoxLayout" name="serialbtnLayout">
               <item>
+               <widget class="QPushButton" name="searchSerialButton">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>40</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>40</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>搜索串口</string>
+                </property>
+                <property name="icon">
+                 <iconset resource="resource/resource.qrc">
+                  <normaloff>:/images/images/search_serial.png</normaloff>
+                  <disabledoff>:/images/images/search_serial_disable.png</disabledoff>:/images/images/search_serial.png</iconset>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>30</width>
+                  <height>30</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QPushButton" name="openSerialButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -719,30 +881,16 @@
                 <property name="text">
                  <string>打开串口</string>
                 </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="refreshPortButton">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
+                <property name="icon">
+                 <iconset resource="resource/resource.qrc">
+                  <normaloff>:/images/images/open_serial.png</normaloff>
+                  <disabledoff>:/images/images/open_serial_disable.png</disabledoff>:/images/images/open_serial.png</iconset>
                 </property>
-                <property name="minimumSize">
+                <property name="iconSize">
                  <size>
-                  <width>0</width>
-                  <height>40</height>
+                  <width>30</width>
+                  <height>30</height>
                  </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>40</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>刷新串口</string>
                 </property>
                </widget>
               </item>
@@ -761,6 +909,9 @@
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
            <widget class="QRadioButton" name="highSpeedRadioButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>高速</string>
             </property>
@@ -768,6 +919,9 @@
           </item>
           <item>
            <widget class="QRadioButton" name="mediumSpeedRadioButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>中速</string>
             </property>
@@ -775,8 +929,17 @@
           </item>
           <item>
            <widget class="QRadioButton" name="lowSpeedRadioButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="tabletTracking">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>低速</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -790,6 +953,42 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_6">
           <item>
+           <layout class="QHBoxLayout" name="gaugePanelLayout">
+            <item>
+             <widget class="GaugePanel" name="gaugePanelWidget1" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>150</width>
+                <height>150</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>150</width>
+                <height>150</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="GaugePanel" name="gaugePanelWidget2" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>150</width>
+                <height>150</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>150</width>
+                <height>150</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="rAxisLayout">
             <item>
              <widget class="QLabel" name="rAxisLabel">
@@ -800,6 +999,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="rAxisForwardButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>进</string>
               </property>
@@ -807,6 +1009,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="rAxisBackwardButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>退</string>
               </property>
@@ -825,6 +1030,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="tAxisForwardButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>进</string>
               </property>
@@ -832,6 +1040,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="tAxisBackwardButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>退</string>
               </property>
@@ -849,7 +1060,11 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
-           <widget class="QTextEdit" name="serialMessageEdit"/>
+           <widget class="QPlainTextEdit" name="serialMessageEdit">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -861,7 +1076,7 @@
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string/>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -880,10 +1095,18 @@
      <normaloff>:/images/images/control.png</normaloff>:/images/images/control.png</iconset>
    </property>
    <property name="text">
-    <string>Serial</string>
+    <string>微位移控制系统</string>
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GaugePanel</class>
+   <extends>QWidget</extends>
+   <header>gaugepanel.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resource/resource.qrc"/>
  </resources>

@@ -11,6 +11,9 @@
 #include <QPixmap>
 #include <QString>
 #include <nncam.h>
+#include <QtSerialPort/QSerialPort>
+#include <QtSerialPort/QSerialPortInfo>
+#include <QByteArray>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -43,7 +46,7 @@ private slots:
 
     void on_previewComboBox_currentIndexChanged(int index);
 
-    void on_autoExposureCheckBox_stateChanged(bool state);
+    void on_autoExposureCheckBox_stateChanged(int state);
 
     void on_exposureTimeSlider_valueChanged(int value);
 
@@ -53,7 +56,22 @@ private slots:
 
     void on_tintSlider_valueChanged(int value);
 
+    // 串口
     void on_actionSerial_triggered(bool checked);
+
+    void on_searchSerialButton_clicked();
+
+    void on_openSerialButton_clicked();
+
+    void readSerialData();
+
+    void on_rAxisForwardButton_clicked();
+
+    void on_rAxisBackwardButton_clicked();
+
+    void on_tAxisForwardButton_clicked();
+
+    void on_tAxisBackwardButton_clicked();
 
 signals:
     void evtCallback(unsigned nEvent);
@@ -98,6 +116,15 @@ private:
     QPixmap              framePixmap;
     QGraphicsPixmapItem* pixmapItem;
     QVector<QImage>      imageVector;
+
+    // 串口通信
+    QByteArray createPacket(const QByteArray &data);
+
+    uint16_t calculateCRC16(const QByteArray &data);
+
+    void processReceivedData(const QByteArray &data);
+
+    QSerialPort* m_serial;
     
 };
 #endif // MAINWINDOW_H
