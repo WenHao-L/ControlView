@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     // setWindowFlags(Qt::FramelessWindowHint);
 
     // 仪表盘设置
-    ui->gaugePanelWidget1->setValueRange(100.0);
+    ui->gaugePanelWidget1->setValueRange(60.0);
     ui->gaugePanelWidget2->setValueRange(200.0);
     ui->gaugePanelWidget1->setValueStep(1.0);
     ui->gaugePanelWidget2->setValueStep(1.0);
@@ -84,6 +84,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 连接tab关闭信号和槽
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::closeTab);
+    connect(ui->lowSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
+    connect(ui->mediumSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
+    connect(ui->highSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
 }
 
 MainWindow::~MainWindow()
@@ -697,7 +700,6 @@ void MainWindow::closeTab(int index)
     }
 }
 
-
 void MainWindow::on_searchSerialButton_clicked()
 {
     if (m_serial)
@@ -739,7 +741,6 @@ void MainWindow::on_searchSerialButton_clicked()
         ui->openSerialButton->setEnabled(true);
 }
 
-
 void MainWindow::on_openSerialButton_clicked()
 {
     //尝试打开串口
@@ -755,7 +756,7 @@ void MainWindow::on_openSerialButton_clicked()
         //设置串口名
         m_serial->setPortName(ui->portBox->currentText());
         //设置波特率
-        m_serial->setBaudRate(QSerialPort::Baud9600);
+        m_serial->setBaudRate(QSerialPort::Baud115200);
         //设置数据位
         m_serial->setDataBits(QSerialPort::Data8);
         //设置校验位
@@ -803,7 +804,6 @@ void MainWindow::on_openSerialButton_clicked()
     }
 }
 
-
 QByteArray MainWindow::createPacket(const QByteArray &data) {
     QByteArray packet;
     packet.append(0x55);  // Start byte
@@ -816,22 +816,19 @@ QByteArray MainWindow::createPacket(const QByteArray &data) {
     return packet;
 }
 
-
 void MainWindow::readSerialData()
 {
     QByteArray data = m_serial->readAll();
     processReceivedData(data);
 }
 
-
 uint16_t MainWindow::calculateCRC16(const QByteArray &data) {
     return CRC16::calculate(data);
 }
 
-
 void MainWindow::processReceivedData(const QByteArray &data) {
     // Verify packet structure
-    if (data.size() < 16 || data.at(0) != 0x55 || data.at(data.size() - 1) != 0xAA) {
+    if (data.size() < 17 || data.at(0) != 0x55 || data.at(data.size() - 1) != 0xAA) {
         // Handle invalid packet
         return;
     }
@@ -845,9 +842,18 @@ void MainWindow::processReceivedData(const QByteArray &data) {
         return;
     }
 
-    // Process valid data
-}
+    // 提取前五位数据（温度等信息）
+    QByteArray infoData = receivedData.left(5);
 
+    // 提取六到九位数据（T轴电机角度）
+    QByteArray tAxisData = receivedData.mid(5, 4);
+    uint32_t tAxisAngle = *reinterpret_cast<const uint32_t*>(tAxisData.constData());
+
+    // 提取十到十三位数据（R轴电机角度）
+    QByteArray rAxisData = receivedData.mid(9, 4);
+    uint32_t rAxisAngle = *reinterpret_cast<const uint32_t*>(rAxisData.constData());
+    qDebug() << "true!!!!!!!!!";
+}
 
 void MainWindow::on_rAxisForwardButton_clicked()
 {
@@ -860,8 +866,6 @@ void MainWindow::on_rAxisForwardButton_clicked()
     }
 }
 
-
-
 void MainWindow::on_rAxisBackwardButton_clicked()
 {
     if (m_serial->isOpen())
@@ -872,7 +876,6 @@ void MainWindow::on_rAxisBackwardButton_clicked()
         m_serial->write(packet);
     }
 }
-
 
 void MainWindow::on_tAxisForwardButton_clicked()
 {
@@ -885,7 +888,6 @@ void MainWindow::on_tAxisForwardButton_clicked()
     }
 }
 
-
 void MainWindow::on_tAxisBackwardButton_clicked()
 {
     if (m_serial->isOpen())
@@ -894,5 +896,21 @@ void MainWindow::on_tAxisBackwardButton_clicked()
         data = QByteArray::fromHex("0400000000000000");
         QByteArray packet = createPacket(data);
         m_serial->write(packet);
+    }
+}
+
+void MainWindow::onSpeedChanged()
+{
+    if (ui->lowSpeedRadioButton->isChecked())
+    {
+        return;
+    }
+    else if (ui->mediumSpeedRadioButton->isChecked())
+    {
+        return;
+    }
+    else if (ui->highSpeedRadioButton->isChecked())
+    {
+        return;
     }
 }

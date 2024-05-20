@@ -73,6 +73,8 @@ private slots:
 
     void on_tAxisBackwardButton_clicked();
 
+    void onSpeedChanged();
+
 signals:
     void evtCallback(unsigned nEvent);
 
