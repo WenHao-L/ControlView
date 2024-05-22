@@ -26,8 +26,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->gaugePanelWidget2->setValueRange(200.0);
     ui->gaugePanelWidget1->setValueStep(1.0);
     ui->gaugePanelWidget2->setValueStep(1.0);
-    ui->gaugePanelWidget1->setValue(0);
-    ui->gaugePanelWidget2->setValue(0);
+    ui->gaugePanelWidget1->setValue(0.0);
+    ui->gaugePanelWidget2->setValue(0.0);
 
     QFile qss(":qdarkstyle/dark/darkstyle.qss");
 
@@ -766,9 +766,12 @@ void MainWindow::on_openSerialButton_clicked()
         //设置流控制
         m_serial->setFlowControl(QSerialPort::NoFlowControl);  //设置为无流控制
 
+        //连接信号和槽函数，串口有数据可读时，调用ReadData()函数读取数据并处理。
+        connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readSerialData);
+
         //打开串口
         if (!m_serial->open(QIODevice::ReadWrite)) {
-            QMessageBox::warning(NULL, u8"警告", u8"串口打开失败！\r\n\r\n");
+            QMessageBox::warning(NULL, u8"警告", u8"串口打开失败！\r\n");
             return;
         }
 
@@ -784,9 +787,7 @@ void MainWindow::on_openSerialButton_clicked()
         ui->tAxisForwardButton->setEnabled(true);
         ui->tAxisBackwardButton->setEnabled(true);
 
-        //连接信号和槽函数，串口有数据可读时，调用ReadData()函数读取数据并处理。
-        connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readSerialData);
-//        connect(m_serial, &QSerialPort::errorOccurred, this, &MainWindow::handleError);
+        ui->serialMessageEdit->insertPlainText(u8"串口连接成功！\r\n");
     }
     else
     {
@@ -827,9 +828,12 @@ uint16_t MainWindow::calculateCRC16(const QByteArray &data) {
 }
 
 void MainWindow::processReceivedData(const QByteArray &data) {
+     QString dataString = QString::fromUtf8(data.toHex(' '));
+     ui->serialMessageEdit->insertPlainText(u8"接收：" + dataString + "\r\n");
+
     // Verify packet structure
-    if (data.size() < 17 || data.at(0) != 0x55 || data.at(data.size() - 1) != 0xAA) {
-        // Handle invalid packet
+    if (data.size() < 18 || data.at(0) != 0x55) {
+        ui->serialMessageEdit->insertPlainText(u8"数据接收错误！\r\n");
         return;
     }
 
@@ -839,29 +843,33 @@ void MainWindow::processReceivedData(const QByteArray &data) {
 
     if (receivedCrc != calculatedCrc) {
         // Handle CRC error
+        ui->serialMessageEdit->insertPlainText(u8"CRC校验出错！\r\n");
         return;
     }
 
-    // 提取前五位数据（温度等信息）
-    QByteArray infoData = receivedData.left(5);
+    // 提取前六位数据（温度等信息）
+    // QByteArray infoData = receivedData.left(6);
 
-    // 提取六到九位数据（T轴电机角度）
-    QByteArray tAxisData = receivedData.mid(5, 4);
+    // 提取七到十位数据（T轴电机角度）
+    QByteArray tAxisData = receivedData.mid(6, 4);
     uint32_t tAxisAngle = *reinterpret_cast<const uint32_t*>(tAxisData.constData());
+    double tAngle = static_cast<double>(tAxisAngle) / 100.0;
+    double tRotation = tAngle - tOriginAngle;
+    ui->gaugePanelWidget2->setValue(tRotation);
 
-    // 提取十到十三位数据（R轴电机角度）
-    QByteArray rAxisData = receivedData.mid(9, 4);
+    // 提取十一到十四位数据（R轴电机角度）
+    QByteArray rAxisData = receivedData.mid(10, 4);
     uint32_t rAxisAngle = *reinterpret_cast<const uint32_t*>(rAxisData.constData());
-    qDebug() << "true!!!!!!!!!";
+    double rAngle = static_cast<double>(rAxisAngle) / 100.0;
+    double rRotation = rAngle - rOriginAngle;
+    ui->gaugePanelWidget1->setValue(rRotation);
 }
 
 void MainWindow::on_rAxisForwardButton_clicked()
 {
     if (m_serial->isOpen())
     {
-        QByteArray data;
-        data = QByteArray::fromHex("0100000000000000");
-        QByteArray packet = createPacket(data);
+        QByteArray packet = createPacket(rForwardData);
         m_serial->write(packet);
     }
 }
@@ -870,9 +878,7 @@ void MainWindow::on_rAxisBackwardButton_clicked()
 {
     if (m_serial->isOpen())
     {
-        QByteArray data;
-        data = QByteArray::fromHex("0200000000000000");
-        QByteArray packet = createPacket(data);
+        QByteArray packet = createPacket(rBackwardData);
         m_serial->write(packet);
     }
 }
@@ -881,9 +887,7 @@ void MainWindow::on_tAxisForwardButton_clicked()
 {
     if (m_serial->isOpen())
     {
-        QByteArray data;
-        data = QByteArray::fromHex("0300000000000000");
-        QByteArray packet = createPacket(data);
+        QByteArray packet = createPacket(tForwardData);
         m_serial->write(packet);
     }
 }
@@ -892,9 +896,7 @@ void MainWindow::on_tAxisBackwardButton_clicked()
 {
     if (m_serial->isOpen())
     {
-        QByteArray data;
-        data = QByteArray::fromHex("0400000000000000");
-        QByteArray packet = createPacket(data);
+        QByteArray packet = createPacket(tBackwardData);
         m_serial->write(packet);
     }
 }
@@ -903,14 +905,23 @@ void MainWindow::onSpeedChanged()
 {
     if (ui->lowSpeedRadioButton->isChecked())
     {
-        return;
+        rForwardData = QByteArray::fromHex("000000000000000100000000");
+        rBackwardData = QByteArray::fromHex("00000000ffffffff00000000");
+        tForwardData = QByteArray::fromHex("000000010000000000000000");
+        tBackwardData = QByteArray::fromHex("ffffffff0000000000000000");
     }
     else if (ui->mediumSpeedRadioButton->isChecked())
     {
-        return;
+        rForwardData = QByteArray::fromHex("000000000000006400000000");
+        rBackwardData = QByteArray::fromHex("00000000ffffff9c00000000");
+        tForwardData = QByteArray::fromHex("000000640000000000000000");
+        tBackwardData = QByteArray::fromHex("ffffff9c0000000000000000");
     }
     else if (ui->highSpeedRadioButton->isChecked())
     {
-        return;
+        rForwardData = QByteArray::fromHex("00000000000003e800000000");  // ff 00 00 00
+        rBackwardData = QByteArray::fromHex("00000000fffffc1800000000"); // 9c 00 00 00
+        tForwardData = QByteArray::fromHex("000003e80000000000000000");
+        tBackwardData = QByteArray::fromHex("fffffc180000000000000000");  //fc 18 00 00
     }
 }

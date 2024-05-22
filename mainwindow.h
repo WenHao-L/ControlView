@@ -119,6 +119,13 @@ private:
     QGraphicsPixmapItem* pixmapItem;
     QVector<QImage>      imageVector;
 
+    QByteArray rForwardData = QByteArray::fromHex("000000000000000100000000");
+    QByteArray rBackwardData = QByteArray::fromHex("000000000000000100000000");
+    QByteArray tForwardData = QByteArray::fromHex("000000010000000000000000");
+    QByteArray tBackwardData = QByteArray::fromHex("000000010000000000000000");
+    float rOriginAngle = 0.0;
+    float tOriginAngle = 0.0;
+
     // 串口通信
     QByteArray createPacket(const QByteArray &data);
 
