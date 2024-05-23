@@ -702,12 +702,36 @@
      <layout class="QVBoxLayout" name="tabLayout" stretch="1,0">
       <item>
        <widget class="QTabWidget" name="tabWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="currentIndex">
-         <number>-1</number>
+         <number>0</number>
         </property>
         <property name="tabsClosable">
          <bool>true</bool>
         </property>
+        <widget class="QWidget" name="previewTab">
+         <attribute name="title">
+          <string>画面预览</string>
+         </attribute>
+         <widget class="QLabel" name="imageView">
+          <property name="geometry">
+           <rect>
+            <x>11</x>
+            <y>11</y>
+            <width>1500</width>
+            <height>900</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </widget>
        </widget>
       </item>
       <item>

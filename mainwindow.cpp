@@ -180,6 +180,7 @@ void MainWindow::on_captureButton_clicked()
     {
         if (0 == m_cur.model->still)    // not support still image capture
         {
+            qDebug() << "no still\r\n";
             if (m_pData)
             {
                 QImage image(m_pData, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
@@ -206,6 +207,7 @@ void MainWindow::on_captureButton_clicked()
         }
         else
         {
+            qDebug() << "still\r\n";
             int currentCaptureIndex = ui->captureComboBox->currentIndex();
         
             // 使用当前选中的序号作为参数调用 Nncam_Snap 函数
@@ -334,20 +336,22 @@ void MainWindow::on_actionSerial_triggered(bool checked)
 void MainWindow::initPreview()
 {
     // 创建预览页面、视图和场景
-    previewTab = new QWidget();
-    previewView = new QGraphicsView();
-    previewScene = new QGraphicsScene();
-    pixmapItem = previewScene->addPixmap(framePixmap);
+    // previewTab = new QWidget();
+    // previewView = new QGraphicsView();
+    // previewScene = new QGraphicsScene();
+    // pixmapItem = previewScene->addPixmap(framePixmap);
 
     // 设置previewView的场景
-    previewView->setScene(previewScene);
+    // previewView->setScene(previewScene);
     // 将previewView添加到previewTab的布局中
-    QGridLayout *previewLayout = new QGridLayout(previewTab);
-    previewLayout->addWidget(previewView);
+    // QGridLayout *previewLayout = new QGridLayout(previewTab);
+    // QGridLayout *previewLayout = new QGridLayout(ui->previewTab);
+    // previewLayout->addWidget(previewView);
     // 设置previewTab的布局
-    previewTab->setLayout(previewLayout);
+    // previewTab->setLayout(previewLayout);
+    // ui->previewTab->setLayout(previewLayout);
     // 将previewTab添加到tabWidget 中
-    ui->tabWidget->addTab(previewTab, "画面预览");
+    // ui->tabWidget->addTab(previewTab, "画面预览");
 }
 
 void MainWindow::openCamera()
@@ -357,7 +361,8 @@ void MainWindow::openCamera()
     if (m_hcam)
     {
         // 初始化预览页面
-        initPreview();
+        // initPreview();
+        qDebug() << "true!!!" ;
 
         // 获取摄像头的分辨率信息
         Nncam_get_eSize(m_hcam, (unsigned*)&m_res);
@@ -395,6 +400,7 @@ void MainWindow::openCamera()
         // 设置是否启用自动曝光
         Nncam_put_AutoExpoEnable(m_hcam, ui->autoExposureCheckBox->isChecked()? 1 : 0);
 
+        qDebug() << "true!!!" ;
         // 启动摄像头
         startCamera();
 
@@ -473,18 +479,19 @@ int MainWindow::closeCamera()
     // 清空图像向量
     imageVector.clear();
 
+    ui->imageView->clear();
     // 删除预览标签页相关的QWidget对象
-    delete previewTab;
-    previewTab = nullptr;
-    delete previewView;
-    previewView = nullptr;
-    delete previewScene;
-    previewScene = nullptr;
+    // delete previewTab;
+    // previewTab = nullptr;
+    // delete previewView;
+    // previewView = nullptr;
+    // delete previewScene;
+    // previewScene = nullptr;
 
     // 移除所有标签页
-    while (ui->tabWidget->count() > 0)
+    while (ui->tabWidget->count() > 1)
     {
-        ui->tabWidget->removeTab(0);
+        ui->tabWidget->removeTab(1);
     }
 
     m_timer->stop();
@@ -591,9 +598,12 @@ void MainWindow::handleImageEvent()
     if (SUCCEEDED(Nncam_PullImage(m_hcam, m_pData, 24, &width, &height)))
     {
         QImage image(m_pData, width, height, QImage::Format_RGB888);
-        framePixmap = QPixmap::fromImage(image);
-        pixmapItem->setPixmap(framePixmap);
-        previewView->update();
+        // QImage newimage = image.scaled(ui->imageView->width(), ui->imageView->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
+        QImage newimage = image.scaled(ui->previewTab->size(), Qt::KeepAspectRatio, Qt::FastTransformation);
+        ui->imageView->setPixmap(QPixmap::fromImage(newimage));
+        ui->imageView->setScaledContents(true);
+        // pixmapItem->setPixmap(framePixmap);
+        // previewView->update();
 
         if (m_isRecording)
         {
@@ -661,9 +671,9 @@ void MainWindow::handleStillImageEvent()
             layout->setContentsMargins(0, 0, 0, 0);
             newTab->setLayout(layout);
 
-            QPixmap pixmap = QPixmap::fromImage(image);
-            // QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            // imageLabel->setScaledContents(true);
+            // QPixmap pixmap = QPixmap::fromImage(image);
+            QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            imageLabel->setScaledContents(true);
             imageLabel->setPixmap(pixmap);
 
             // 将新创建的QImage存储到映射中，并添加标签页到tabWidget
