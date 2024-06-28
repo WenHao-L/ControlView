@@ -22,12 +22,12 @@ MainWindow::MainWindow(QWidget *parent)
     // setWindowFlags(Qt::FramelessWindowHint);
 
     // 仪表盘设置
-    ui->gaugePanelWidget1->setValueRange(60.0);
-    ui->gaugePanelWidget2->setValueRange(200.0);
-    ui->gaugePanelWidget1->setValueStep(1.0);
-    ui->gaugePanelWidget2->setValueStep(1.0);
-    ui->gaugePanelWidget1->setValue(0.0);
-    ui->gaugePanelWidget2->setValue(0.0);
+    ui->rGaugePanelWidget->setValueRange(60.0);
+    ui->tGaugePanelWidget->setValueRange(200.0);
+    ui->rGaugePanelWidget->setValueStep(1.0);
+    ui->tGaugePanelWidget->setValueStep(1.0);
+    ui->rGaugePanelWidget->setValue(0.0);
+    ui->tGaugePanelWidget->setValue(0.0);
 
     QFile qss(":qdarkstyle/dark/darkstyle.qss");
 
@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
         qss.close();
     }
 
-    ui->serialWidget->setVisible(false);
+    ui->serialWidget->setVisible(true);
 
     // 设置白平衡参数
     ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
@@ -64,12 +64,12 @@ MainWindow::MainWindow(QWidget *parent)
             else if (NNCAM_EVENT_ERROR == nEvent)
             {
                 closeCamera();
-                QMessageBox::warning(this, "Warning", "Generic error.");
+                QMessageBox::warning(this, "Warning", u8"一般性错误, 数据采集不能继续。");
             }
             else if (NNCAM_EVENT_DISCONNECTED == nEvent)
             {
                 closeCamera();
-                QMessageBox::warning(this, "Warning", "Camera disconnect.");
+                QMessageBox::warning(this, "Warning", u8"相机断开连接。");
             }
         }
     });
@@ -131,7 +131,6 @@ void MainWindow::on_searchCameraButton_clicked()
     if (m_hcam)
     {
         closeCamera();
-        // unsigned count = 0;
     }
     else
     {
@@ -142,7 +141,7 @@ void MainWindow::on_searchCameraButton_clicked()
         unsigned count = Nncam_EnumV2(arr);
         // 如果没有找到相机，则显示警告信息
         if (0 == count)
-            QMessageBox::warning(this, "Warning", "No camera found.");
+            QMessageBox::warning(this, "Warning", u8"没有找到相机。");
         // 如果找到一个相机，则获取该相机并添加到相机列表
         else if (1 == count)
         {
@@ -158,8 +157,8 @@ void MainWindow::on_searchCameraButton_clicked()
             {
                 ui->cameraComboBox->addItem(QString::fromWCharArray(arr[i].displayname));
             }
-            ui->cameraComboBox->setCurrentIndex(0);
             m_cur = arr[0];
+            ui->cameraComboBox->setCurrentIndex(0);
             ui->cameraComboBox->setEnabled(true);
             ui->cameraButton->setEnabled(true);
         }
@@ -333,37 +332,12 @@ void MainWindow::on_actionSerial_triggered(bool checked)
     ui->serialWidget->setVisible(checked);
 }
 
-void MainWindow::initPreview()
-{
-    // 创建预览页面、视图和场景
-    // previewTab = new QWidget();
-    // previewView = new QGraphicsView();
-    // previewScene = new QGraphicsScene();
-    // pixmapItem = previewScene->addPixmap(framePixmap);
-
-    // 设置previewView的场景
-    // previewView->setScene(previewScene);
-    // 将previewView添加到previewTab的布局中
-    // QGridLayout *previewLayout = new QGridLayout(previewTab);
-    // QGridLayout *previewLayout = new QGridLayout(ui->previewTab);
-    // previewLayout->addWidget(previewView);
-    // 设置previewTab的布局
-    // previewTab->setLayout(previewLayout);
-    // ui->previewTab->setLayout(previewLayout);
-    // 将previewTab添加到tabWidget 中
-    // ui->tabWidget->addTab(previewTab, "画面预览");
-}
-
 void MainWindow::openCamera()
 {
     // 打开摄像头
     m_hcam = Nncam_Open(m_cur.id);
     if (m_hcam)
     {
-        // 初始化预览页面
-        // initPreview();
-        qDebug() << "true!!!" ;
-
         // 获取摄像头的分辨率信息
         Nncam_get_eSize(m_hcam, (unsigned*)&m_res);
 
@@ -400,17 +374,8 @@ void MainWindow::openCamera()
         // 设置是否启用自动曝光
         Nncam_put_AutoExpoEnable(m_hcam, ui->autoExposureCheckBox->isChecked()? 1 : 0);
 
-        qDebug() << "true!!!" ;
         // 启动摄像头
         startCamera();
-
-        // 修改按钮
-        ui->cameraButton->setText("关闭相机");
-        ui->searchCameraButton->setEnabled(false);
-
-        // 白平衡滑块使能
-        ui->temperatureSlider->setEnabled(true);
-        ui->tintSlider->setEnabled(true);
     }
 }
 
@@ -554,26 +519,36 @@ void MainWindow::startCamera()
     // 尝试以回调模式启动相机，如果成功，则进行以下设置
     if (SUCCEEDED(Nncam_StartPullModeWithCallback(m_hcam, eventCallBack, this)))
     {
+        // 启用捕获按钮
+        ui->captureButton->setEnabled(true);
+        // 启用录像按钮
+        ui->videoButton->setEnabled(true);
         // 启用分辨率选择下拉框
         ui->previewComboBox->setEnabled(true);
         ui->captureComboBox->setEnabled(true);
         // 启用自动曝光复选框
         ui->autoExposureCheckBox->setEnabled(true);
+
+        // 获取当前自动曝光的状态，并设置复选框的选中状态
+        int bAuto = 0;
+        Nncam_get_AutoExpoEnable(m_hcam, &bAuto);
+        ui->exposureTimeSlider->setEnabled(!(1 == bAuto));
+        ui->gainSlider->setEnabled(!(1 == bAuto));
+        {
+            const QSignalBlocker blocker(ui->autoExposureCheckBox);
+            ui->autoExposureCheckBox->setChecked(1 == bAuto);
+        }
+
         // 根据相机模型启用自动白平衡按钮
         ui->whileBalanceButton->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
         // 启用色温滑块
         ui->temperatureSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
         // 启用色度滑块
         ui->tintSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
-        // 启用捕获按钮
-        ui->captureButton->setEnabled(true);
-        // 启用录像按钮
-        ui->videoButton->setEnabled(true);
 
-        // 获取当前自动曝光的状态，并设置复选框的选中状态
-        int bAuto = 0;
-        Nncam_get_AutoExpoEnable(m_hcam, &bAuto);
-        ui->autoExposureCheckBox->setChecked(1 == bAuto);
+        // 修改按钮
+        ui->cameraButton->setText("关闭相机");
+        ui->searchCameraButton->setEnabled(false);
 
         // 启动一个定时器，每秒触发一次
         m_timer->start(1000);
@@ -582,7 +557,7 @@ void MainWindow::startCamera()
     else
     {
         closeCamera();
-        QMessageBox::warning(this, "Warning", "Failed to start camera.");
+        QMessageBox::warning(this, "Warning", u8"无法打开相机。");
     }
 }
 
@@ -865,14 +840,14 @@ void MainWindow::processReceivedData(const QByteArray &data) {
     uint32_t tAxisAngle = *reinterpret_cast<const uint32_t*>(tAxisData.constData());
     double tAngle = static_cast<double>(tAxisAngle) / 100.0;
     double tRotation = tAngle - tOriginAngle;
-    ui->gaugePanelWidget2->setValue(tRotation);
+    ui->tGaugePanelWidget->setValue(tRotation);
 
     // 提取十一到十四位数据（R轴电机角度）
     QByteArray rAxisData = receivedData.mid(10, 4);
     uint32_t rAxisAngle = *reinterpret_cast<const uint32_t*>(rAxisData.constData());
     double rAngle = static_cast<double>(rAxisAngle) / 100.0;
     double rRotation = rAngle - rOriginAngle;
-    ui->gaugePanelWidget1->setValue(rRotation);
+    ui->rGaugePanelWidget->setValue(rRotation);
 }
 
 void MainWindow::on_rAxisForwardButton_clicked()

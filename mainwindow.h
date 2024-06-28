@@ -79,8 +79,6 @@ signals:
     void evtCallback(unsigned nEvent);
 
 private:
-    void initPreview();
-
     void openCamera();
 
     int closeCamera();

@@ -377,33 +377,6 @@
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="modeLayout">
-          <item>
-           <widget class="QRadioButton" name="videoRadioButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>视频模式</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="triggerRadioButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>触发模式</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
          <widget class="QCheckBox" name="autoExposureCheckBox">
           <property name="enabled">
            <bool>false</bool>
@@ -650,27 +623,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="wbRemindLabel1">
-          <property name="text">
-           <string>在点击“白平衡”按钮之前，请移动ROI</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="wbRemindLabel2">
-          <property name="text">
-           <string>(标记为红色矩形）至样品的纯白或者</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="wbRemindLabel3">
-          <property name="text">
-           <string>灰色部分。</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <layout class="QHBoxLayout" name="wbSelectLayout">
           <item>
            <widget class="QPushButton" name="whileBalanceButton">
@@ -757,19 +709,7 @@
         <height>16777215</height>
        </size>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0,0,0">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
+      <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
         <widget class="QGroupBox" name="serialGroupBox">
          <property name="minimumSize">
@@ -996,29 +936,14 @@
          <property name="title">
           <string>操作控制</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_10">
-          <property name="spacing">
-           <number>7</number>
-          </property>
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_12">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <layout class="QHBoxLayout" name="rLayout">
             <property name="leftMargin">
              <number>11</number>
             </property>
             <item>
-             <widget class="GaugePanel" name="gaugePanelWidget1" native="true">
+             <widget class="GaugePanel" name="rGaugePanelWidget" native="true">
               <property name="minimumSize">
                <size>
                 <width>160</width>
@@ -1034,46 +959,24 @@
              </widget>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_6">
+             <layout class="QVBoxLayout" name="rLayout1">
               <item>
-               <spacer name="verticalSpacer_3">
+               <spacer name="rSpacer1">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
-                  <width>143</width>
-                  <height>24</height>
+                  <width>20</width>
+                  <height>40</height>
                  </size>
                 </property>
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="rAxisLabel">
-                <property name="sizeIncrement">
-                 <size>
-                  <width>0</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>0</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>R轴</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <layout class="QHBoxLayout" name="rLayout2">
                 <item>
-                 <spacer name="horizontalSpacer">
+                 <spacer name="rForwardSpacer1">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1092,23 +995,23 @@
                   </property>
                   <property name="minimumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="text">
-                   <string>进</string>
+                   <string>R轴进</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_2">
+                 <spacer name="rForwardSpacer2">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1123,9 +1026,22 @@
                </layout>
               </item>
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_4">
+               <spacer name="rSpacer2">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="rLayout3">
                 <item>
-                 <spacer name="horizontalSpacer_3">
+                 <spacer name="rBackwardSpacer1">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1144,23 +1060,23 @@
                   </property>
                   <property name="minimumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="text">
-                   <string>退</string>
+                   <string>R轴退</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_4">
+                 <spacer name="rBackwardSpacer2">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1175,14 +1091,14 @@
                </layout>
               </item>
               <item>
-               <spacer name="verticalSpacer">
+               <spacer name="rSpacer3">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
-                  <width>143</width>
-                  <height>25</height>
+                  <width>20</width>
+                  <height>40</height>
                  </size>
                 </property>
                </spacer>
@@ -1192,12 +1108,12 @@
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <layout class="QHBoxLayout" name="tLayout">
             <property name="leftMargin">
              <number>11</number>
             </property>
             <item>
-             <widget class="GaugePanel" name="gaugePanelWidget2" native="true">
+             <widget class="GaugePanel" name="tGaugePanelWidget" native="true">
               <property name="minimumSize">
                <size>
                 <width>160</width>
@@ -1213,9 +1129,9 @@
              </widget>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_9">
+             <layout class="QVBoxLayout" name="tLayout1">
               <item>
-               <spacer name="verticalSpacer_2">
+               <spacer name="tSpacer1">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
@@ -1228,31 +1144,9 @@
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="tAxisLabel">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>T轴</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <layout class="QHBoxLayout" name="tLayout2">
                 <item>
-                 <spacer name="horizontalSpacer_5">
+                 <spacer name="tForwardSpacer1">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1271,23 +1165,23 @@
                   </property>
                   <property name="minimumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="text">
-                   <string>进</string>
+                   <string>T轴进</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_6">
+                 <spacer name="tForwardSpacer2">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1302,9 +1196,22 @@
                </layout>
               </item>
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_5">
+               <spacer name="tSpacer3">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="tLayout3">
                 <item>
-                 <spacer name="horizontalSpacer_7">
+                 <spacer name="tBackwardSpacer1">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1323,23 +1230,23 @@
                   </property>
                   <property name="minimumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>80</width>
+                    <width>60</width>
                     <height>30</height>
                    </size>
                   </property>
                   <property name="text">
-                   <string>退</string>
+                   <string>T轴退</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer_8">
+                 <spacer name="tBackwardSpacer2">
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
                   </property>
@@ -1354,7 +1261,7 @@
                </layout>
               </item>
               <item>
-               <spacer name="verticalSpacer_4">
+               <spacer name="tSpacer2">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
@@ -1367,6 +1274,280 @@
                </spacer>
               </item>
              </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="controlSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="xyzLayout">
+            <item>
+             <spacer name="xyzSpacer1">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QGridLayout" name="xyLayout">
+              <item row="0" column="0">
+               <spacer name="xySpacer1">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="1">
+               <widget class="QPushButton" name="yAxisForwardButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Y轴上</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <spacer name="xySpacer2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="0">
+               <widget class="QPushButton" name="xAxisBackwardButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>X轴退</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <spacer name="xySpacer3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="2">
+               <widget class="QPushButton" name="xAxisForwardButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>X轴进</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <spacer name="xySpacer4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="2" column="1">
+               <widget class="QPushButton" name="yAxisBackwardButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Y轴下</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <spacer name="xySpacer5">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="xyzSpacer2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="zLayout">
+              <item>
+               <widget class="QPushButton" name="zAxisForwardButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Z轴升</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="zSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="rAxisForwardButton_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>60</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Z轴降</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="xyzSpacer3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
           </item>
@@ -1408,6 +1589,9 @@
   </widget>
   <action name="actionSerial">
    <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
     <bool>true</bool>
    </property>
    <property name="icon">
