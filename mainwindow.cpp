@@ -338,6 +338,11 @@ void MainWindow::openCamera()
     m_hcam = Nncam_Open(m_cur.id);
     if (m_hcam)
     {
+        // 设置帧速率级别
+        unsigned short maxSpeed;
+        Nncam_get_MaxSpeed(m_hcam, &maxSpeed);
+        Nncam_put_Speed(m_hcam, maxSpeed);
+
         // 获取摄像头的分辨率信息
         Nncam_get_eSize(m_hcam, (unsigned*)&m_res);
 
@@ -368,8 +373,10 @@ void MainWindow::openCamera()
             ui->captureComboBox->setEnabled(true);
         }
 
-        // 设置摄像头选项，这里设置为RGB字节序，因为QImage使用RGB字节序
+        // 设置摄像头选项，这里设置为RGB字节序（0：RGB，1：BGR），因为QImage使用RGB字节序
         Nncam_put_Option(m_hcam, NNCAM_OPTION_BYTEORDER, 0);
+        // 设置摄像头选项，这里设置为视频画面不倒置
+        Nncam_put_Option(m_hcam, NNCAM_OPTION_UPSIDE_DOWN, 0);
 
         // 设置是否启用自动曝光
         Nncam_put_AutoExpoEnable(m_hcam, ui->autoExposureCheckBox->isChecked()? 1 : 0);
