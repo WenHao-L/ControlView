@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += ./inc
 
 SOURCES += \
+    camerathread.cpp \
     crc16.cpp \
     gaugepanel.cpp \
     login.cpp \
@@ -32,6 +33,7 @@ SOURCES += \
 
 HEADERS += \
     CustomTitleBar.h \
+    camerathread.h \
     crc16.h \
     gaugepanel.h \
     login.h \
