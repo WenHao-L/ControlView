@@ -39,40 +39,14 @@ MainWindow::MainWindow(QWidget *parent)
         qss.close();
     }
 
+    // 微控制器可视化
     ui->serialWidget->setVisible(true);
 
-    // 设置白平衡参数
-    ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
-    ui->tintNumLabel->setText(QString::number(NNCAM_TINT_DEF));
-    ui->temperatureSlider->setRange(NNCAM_TEMP_MIN, NNCAM_TEMP_MAX);
-    ui->temperatureSlider->setValue(NNCAM_TEMP_DEF);
-    ui->tintSlider->setRange(NNCAM_TINT_MIN, NNCAM_TINT_MAX);
-    ui->tintSlider->setValue(NNCAM_TINT_DEF);
+    // 设置默认白平衡参数
+    on_defaultAwbButton_clicked();
 
-    connect(this, &MainWindow::evtCallback, this, [this](unsigned nEvent)
-    {
-        if (m_hcam)
-        {
-            if (NNCAM_EVENT_IMAGE == nEvent)
-                handleImageEvent();
-            else if (NNCAM_EVENT_EXPOSURE == nEvent)
-                handleExpoEvent();
-            else if (NNCAM_EVENT_TEMPTINT == nEvent)
-                handleTempTintEvent();
-            else if (NNCAM_EVENT_STILLIMAGE == nEvent)
-                handleStillImageEvent();
-            else if (NNCAM_EVENT_ERROR == nEvent)
-            {
-                closeCamera();
-                QMessageBox::warning(this, "Warning", u8"一般性错误, 数据采集不能继续。");
-            }
-            else if (NNCAM_EVENT_DISCONNECTED == nEvent)
-            {
-                closeCamera();
-                QMessageBox::warning(this, "Warning", u8"相机断开连接。");
-            }
-        }
-    });
+    // 设置默认颜色调整参数
+    on_defaultColorButton_clicked();
 
     // 定时器更新帧率显示
     connect(m_timer, &QTimer::timeout, this, [this]()
@@ -179,11 +153,10 @@ void MainWindow::on_captureButton_clicked()
     {
         if (0 == m_cur.model->still)    // not support still image capture
         {
-            qDebug() << "no still\r\n";
             if (m_pData)
             {
                 QImage image(m_pData, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
-                
+
                 // 创建一个新的标签页
                 QWidget *newTab = new QWidget();
                 QLabel *imageLabel = new QLabel(newTab);
@@ -194,9 +167,8 @@ void MainWindow::on_captureButton_clicked()
                 layout->setContentsMargins(0, 0, 0, 0);
                 newTab->setLayout(layout);
 
-                QPixmap pixmap = QPixmap::fromImage(image);
-                // QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                // imageLabel->setScaledContents(true);
+                QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                imageLabel->setScaledContents(true);
                 imageLabel->setPixmap(pixmap);
 
                 // 将新创建的QImage存储到vetor中，并添加标签页到tabWidget
@@ -257,12 +229,16 @@ void MainWindow::on_videoButton_clicked()
 
 void MainWindow::on_whileBalanceButton_clicked()
 {
-    Nncam_AwbOnce(m_hcam, nullptr, nullptr);
-}
-
-void MainWindow::on_defaultValueButton_clicked()
-{
-
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_AwbOnce(m_hcam, nullptr, nullptr)))
+        {
+        }
+        else
+        {
+            QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。"); 
+        }
+    }
 }
 
 void MainWindow::on_previewComboBox_currentIndexChanged(int index)
@@ -285,9 +261,24 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
 {
     if (m_hcam)
     {
-        Nncam_put_AutoExpoEnable(m_hcam, state ? 1 : 0);
-        ui->exposureTimeSlider->setEnabled(!state);
-        ui->gainSlider->setEnabled(!state);
+        if (SUCCEEDED(Nncam_put_AutoExpoEnable(m_hcam, state ? 1 : 0)))
+        {
+            ui->exposureTimeSlider->setEnabled(!state);
+            ui->gainSlider->setEnabled(!state);
+        }
+        else
+        {
+            // 获取当前自动曝光的状态，并设置复选框的选中状态
+            int bAuto = 0;
+            Nncam_get_AutoExpoEnable(m_hcam, &bAuto);
+            ui->exposureTimeSlider->setEnabled(!(1 == bAuto));
+            ui->gainSlider->setEnabled(!(1 == bAuto));
+            {
+                const QSignalBlocker blocker(ui->autoExposureCheckBox);
+                ui->autoExposureCheckBox->setChecked(1 == bAuto);
+            }
+            QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。"); 
+        }
     }
 }
 
@@ -295,9 +286,20 @@ void MainWindow::on_exposureTimeSlider_valueChanged(int value)
 {
     if (m_hcam)
     {
-        ui->exposureTargetNumLabel->setText(QString::number(value));
         if (!ui->autoExposureCheckBox->isChecked())
-            Nncam_put_ExpoTime(m_hcam, value);
+            if (SUCCEEDED(Nncam_put_ExpoTime(m_hcam, static_cast<unsigned>(value))))
+            {
+                m_time = value;
+                ui->exposureTargetNumLabel->setText(QString::number(value));
+            }
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->exposureTimeSlider);
+                    ui->exposureTimeSlider->setValue(m_time);
+                }
+                QMessageBox::warning(this, "Warning", u8"调整曝光时间失败。"); 
+            }
     }
 }
 
@@ -305,31 +307,218 @@ void MainWindow::on_gainSlider_valueChanged(int value)
 {
     if (m_hcam)
     {
-        ui->gainNumLabel->setText(QString::number(value));
         if (!ui->autoExposureCheckBox->isChecked())
-            Nncam_put_ExpoAGain(m_hcam, value);
+            if (SUCCEEDED(Nncam_put_ExpoAGain(m_hcam, static_cast<unsigned short>(value))))
+            {
+                m_gain = value;
+                ui->gainNumLabel->setText(QString::number(value));
+            }
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->gainSlider);
+                    ui->gainSlider->setValue(m_gain);
+                }
+                QMessageBox::warning(this, "Warning", u8"调整曝光增益失败。"); 
+            }
     }
 }
 
 void MainWindow::on_temperatureSlider_valueChanged(int value)
 {
-    m_temp = value;
     if (m_hcam)
-        Nncam_put_TempTint(m_hcam, m_temp, m_tint);
-    ui->temperatureNumLabel->setText(QString::number(value));
+    {
+        if (SUCCEEDED(Nncam_put_TempTint(m_hcam, value, m_tint)))
+        {
+            m_temp = value;
+            ui->temperatureNumLabel->setText(QString::number(value));
+        }
+        else
+        {
+            {
+                const QSignalBlocker blocker(ui->temperatureSlider);
+                ui->temperatureSlider->setValue(m_temp);
+            }
+            QMessageBox::warning(this, "Warning", u8"调整色温失败。"); 
+        }
+    }
 }
 
 void MainWindow::on_tintSlider_valueChanged(int value)
 {
-    m_tint = value;
     if (m_hcam)
-        Nncam_put_TempTint(m_hcam, m_temp, m_tint);
-    ui->tintNumLabel->setText(QString::number(value));
+    {
+        if (SUCCEEDED(Nncam_put_TempTint(m_hcam, m_temp, value)))
+        {
+            m_tint = value;
+            ui->tintNumLabel->setText(QString::number(value));
+        }
+        else
+        {
+            {
+                const QSignalBlocker blocker(ui->tintSlider);
+                ui->tintSlider->setValue(m_temp);
+            }
+            QMessageBox::warning(this, "Warning", u8"调整Tint失败。");          
+        }
+    }
+}
+
+void MainWindow::on_defaultAwbButton_clicked()
+{
+    // 设置白平衡默认参数
+    {
+        const QSignalBlocker blocker(ui->temperatureSlider);
+        ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
+        ui->temperatureSlider->setRange(NNCAM_TEMP_MIN, NNCAM_TEMP_MAX);
+        ui->temperatureSlider->setValue(NNCAM_TEMP_DEF);
+    }
+    {
+        const QSignalBlocker blocker(ui->tintSlider);
+        ui->tintNumLabel->setText(QString::number(NNCAM_TINT_DEF));
+        ui->tintSlider->setRange(NNCAM_TINT_MIN, NNCAM_TINT_MAX);
+        ui->tintSlider->setValue(NNCAM_TINT_DEF);
+    }
+}
+
+void MainWindow::on_hueSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_Hue(m_hcam, value)))
+        {
+            m_hue = value;
+            ui->hueNumLabel->setText(QString::number(value));
+        }
+        else
+        {
+            {
+                const QSignalBlocker blocker(ui->hueSlider);
+                ui->hueSlider->setValue(m_hue);
+            }
+            QMessageBox::warning(this, "Warning", u8"调整色度失败。");          
+        }
+    }
+}
+
+void MainWindow::on_saturationSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_Saturation(m_hcam, value)))
+        {
+            m_saturation = value;
+            ui->saturationNumLabel->setText(QString::number(value));
+        }
+        else
+        {
+            {
+                const QSignalBlocker blocker(ui->saturationSlider);
+                ui->saturationSlider->setValue(m_saturation);
+            }
+            QMessageBox::warning(this, "Warning", u8"调整饱和度失败。");          
+        }
+    }
+}
+
+void MainWindow::on_brightnessSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_Brightness(m_hcam, value)))
+        {
+            m_brightness = value;
+            ui->brightnessNumLabel->setText(QString::number(value));
+        }
+        else
+        {
+            {
+                const QSignalBlocker blocker(ui->brightnessSlider);
+                ui->brightnessSlider->setValue(m_brightness);
+            }
+            QMessageBox::warning(this, "Warning", u8"调整亮度失败。");          
+        }
+    }
+}
+
+void MainWindow::on_contrastSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_Contrast(m_hcam, value)))
+        {
+            m_contrast = value;
+            ui->contrastNumLabel->setText(QString::number(value));
+        }
+        else
+        {
+            {
+                const QSignalBlocker blocker(ui->contrastSlider);
+                ui->contrastSlider->setValue(m_contrast);
+            }
+            QMessageBox::warning(this, "Warning", u8"调整对比度失败。");          
+        }
+    }
+}
+
+void MainWindow::on_gammaSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_Gamma(m_hcam, value)))
+        {
+            m_gamma = value;
+            ui->gammaNumLabel->setText(QString::number(value));
+        }
+        else
+        {
+            {
+                const QSignalBlocker blocker(ui->gammaSlider);
+                ui->gammaSlider->setValue(m_gamma);
+            }
+            QMessageBox::warning(this, "Warning", u8"调整Gamma失败。");          
+        }
+    }
 }
 
 void MainWindow::on_actionSerial_triggered(bool checked)
 {
     ui->serialWidget->setVisible(checked);
+}
+
+void MainWindow::on_defaultColorButton_clicked()
+{
+    // 设置颜色默认参数
+    {
+        const QSignalBlocker blocker(ui->hueSlider);
+        ui->hueNumLabel->setText(QString::number(0));
+        ui->hueSlider->setRange(-180, 180);
+        ui->hueSlider->setValue(0);
+    }
+    {
+        const QSignalBlocker blocker(ui->saturationSlider);
+        ui->saturationNumLabel->setText(QString::number(128));
+        ui->saturationSlider->setRange(0, 255);
+        ui->saturationSlider->setValue(128);
+    }
+    {
+        const QSignalBlocker blocker(ui->brightnessSlider);
+        ui->brightnessNumLabel->setText(QString::number(0));
+        ui->brightnessSlider->setRange(-128, 128);
+        ui->brightnessSlider->setValue(0);
+    }
+    {
+        const QSignalBlocker blocker(ui->contrastSlider);
+        ui->contrastNumLabel->setText(QString::number(0));
+        ui->contrastSlider->setRange(-150, 150);
+        ui->contrastSlider->setValue(0);
+    }
+    {
+        const QSignalBlocker blocker(ui->gammaSlider);
+        ui->gammaNumLabel->setText(QString::number(100));
+        ui->gammaSlider->setRange(20, 180);
+        ui->gammaSlider->setValue(100);
+    }
 }
 
 void MainWindow::openCamera()
@@ -339,9 +528,17 @@ void MainWindow::openCamera()
     if (m_hcam)
     {
         // 设置帧速率级别
-        unsigned short maxSpeed;
-        Nncam_get_MaxSpeed(m_hcam, &maxSpeed);
+        unsigned short maxSpeed = Nncam_get_MaxSpeed(m_hcam);
         Nncam_put_Speed(m_hcam, maxSpeed);
+
+        // 设置为RGB字节序（0：RGB，1：BGR），因为QImage使用RGB字节序
+        Nncam_put_Option(m_hcam, NNCAM_OPTION_BYTEORDER, 0);
+
+        // 设置为视频画面不倒置
+        Nncam_put_Option(m_hcam, NNCAM_OPTION_UPSIDE_DOWN, 0);
+
+        // 设置是否启用自动曝光
+        Nncam_put_AutoExpoEnable(m_hcam, ui->autoExposureCheckBox->isChecked()? 1 : 0);
 
         // 获取摄像头的分辨率信息
         Nncam_get_eSize(m_hcam, (unsigned*)&m_res);
@@ -373,13 +570,56 @@ void MainWindow::openCamera()
             ui->captureComboBox->setEnabled(true);
         }
 
-        // 设置摄像头选项，这里设置为RGB字节序（0：RGB，1：BGR），因为QImage使用RGB字节序
-        Nncam_put_Option(m_hcam, NNCAM_OPTION_BYTEORDER, 0);
-        // 设置摄像头选项，这里设置为视频画面不倒置
-        Nncam_put_Option(m_hcam, NNCAM_OPTION_UPSIDE_DOWN, 0);
+        // 初始化曝光时间范围及默认值
+        unsigned uimax = 0, uimin = 0, uidef = 0;
+        if (SUCCEEDED(Nncam_get_ExpTimeRange(m_hcam, &uimin, &uimax, &uidef)))
+        {
+            ui->exposureTimeSlider->setRange(uimin, uimax);
+        }
+        unsigned time = 0;
+        if (SUCCEEDED(Nncam_get_ExpoTime(m_hcam, &time)))
+        {
+            {
+                const QSignalBlocker blocker(ui->exposureTimeSlider);
+                ui->exposureTimeSlider->setValue(int(time));
+                ui->exposureTimeNumLabel->setText(QString::number(time));
+            }
+        }
 
-        // 设置是否启用自动曝光
-        Nncam_put_AutoExpoEnable(m_hcam, ui->autoExposureCheckBox->isChecked()? 1 : 0);
+        // 初始化曝光增益范围及默认值
+        unsigned short usmax = 0, usmin = 0, usdef = 0;
+        if (SUCCEEDED(Nncam_get_ExpoAGainRange(m_hcam, &usmin, &usmax, &usdef)))
+        {
+            ui->gainSlider->setRange(usmin, usmax);
+        }
+        unsigned short gain = 0;
+        if (SUCCEEDED(Nncam_get_ExpoAGain(m_hcam, &gain)))
+        {
+            {
+                const QSignalBlocker blocker(ui->gainSlider);
+                ui->gainSlider->setValue(int(gain));
+                ui->gainNumLabel->setText(QString::number(gain));
+            }
+        }
+
+        // 如果当前模型不是单色相机，则处理温度和色度事件
+        if (0 == (m_cur.model->flag & NNCAM_FLAG_MONO))
+        {
+            int nTemp = 0, nTint = 0;
+            if (SUCCEEDED(Nncam_get_TempTint(m_hcam, &nTemp, &nTint)))
+            {
+                {
+                    const QSignalBlocker blocker(ui->temperatureSlider);
+                    ui->temperatureSlider->setValue(nTemp);
+                    ui->temperatureNumLabel->setText(QString::number(nTemp));
+                }
+                {
+                    const QSignalBlocker blocker(ui->tintSlider);
+                    ui->tintSlider->setValue(nTint);
+                    ui->tintNumLabel->setText(QString::number(nTint));
+                }
+            }
+        }
 
         // 启动摄像头
         startCamera();
@@ -432,7 +672,13 @@ int MainWindow::closeCamera()
         }
     }
 
-    // 如果没有图像保存或者用户选择不保存，继续关闭相机并进行内存回收
+    if (m_cameraThread)
+    {
+        delete m_cameraThread;
+        m_cameraThread = nullptr;
+    }
+
+    // 如果没有图像保存或者用户选择不保存，继续关闭相机并进行内存回收`
     if (m_hcam)
     {
         Nncam_Close(m_hcam);
@@ -486,9 +732,16 @@ int MainWindow::closeCamera()
     ui->gainSlider->setEnabled(false);
 
     ui->whileBalanceButton->setEnabled(false);
-    ui->defaultValueButton->setEnabled(false);
+    ui->defaultAwbButton->setEnabled(false);
     ui->temperatureSlider->setEnabled(false);
     ui->tintSlider->setEnabled(false);
+
+    ui->hueSlider->setEnabled(false);
+    ui->saturationSlider->setEnabled(false);
+    ui->brightnessSlider->setEnabled(false);
+    ui->contrastSlider->setEnabled(false);
+    ui->gammaSlider->setEnabled(false);
+    ui->defaultColorButton->setEnabled(false);
 
     return 1;
 }
@@ -503,40 +756,66 @@ void MainWindow::startCamera()
     }
     // 重新分配内存用于存储图像数据，TDIBWIDTHBYTES是一个宏，用于计算图像宽度所需的字节数
     m_pData = new uchar[TDIBWIDTHBYTES(m_imgWidth * 24) * m_imgHeight];
-    // 定义三个无符号整型变量uimax，uimin和uidef，用于存储曝光时间的范围和默认值
-    unsigned uimax = 0, uimin = 0, uidef = 0;
-    // 定义三个无符号短整型变量usmax，usmin和usdef，用于存储曝光增益的范围和默认值
-    unsigned short usmax = 0, usmin = 0, usdef = 0;
-    // 调用Nncam_get_ExpTimeRange函数获取相机支持的曝光时间范围及默认值，并存储在相应的变量中
-    Nncam_get_ExpTimeRange(m_hcam, &uimin, &uimax, &uidef);
-    // 设置曝光时间滑块的范围为获取到的范围
-    ui->exposureTimeSlider->setRange(uimin, uimax);
-    // 调用Nncam_get_ExpoAGainRange函数获取相机支持的曝光增益范围及默认值，并存储在相应的变量中
-    Nncam_get_ExpoAGainRange(m_hcam, &usmin, &usmax, &usdef);
-    // 设置曝光增益滑块的范围为获取到的范围
-    ui->gainSlider->setRange(usmin, usmax);
 
-    // 如果当前模型不是单色相机，则处理温度和色度事件
-    if (0 == (m_cur.model->flag & NNCAM_FLAG_MONO))
-        handleTempTintEvent();
+    m_cameraThread = new cameraThread(m_hcam, m_pData, this);
+    connect(m_cameraThread, &cameraThread::imageCaptured, this, &MainWindow::handleImageCaptured);
+    connect(m_cameraThread, &cameraThread::stillImageCaptured, this, &MainWindow::handleStillImageCaptured);
+    connect(m_cameraThread, &cameraThread::cameraStartMessage, this, &MainWindow::handleCameraStartMessage);
+    connect(m_cameraThread, &cameraThread::eventCallBackMessage, this, &MainWindow::handleEventCallBackMessage);
+    m_cameraThread->start();
+}
 
-    // 处理曝光事件
-    handleExpoEvent();
+void MainWindow::handleImageCaptured(const QImage &image)
+{
+    QImage newimage = image.scaled(ui->previewTab->size(), Qt::KeepAspectRatio, Qt::FastTransformation);
+    ui->imageView->setPixmap(QPixmap::fromImage(newimage));
+    ui->imageView->setScaledContents(true);
 
-    // 尝试以回调模式启动相机，如果成功，则进行以下设置
-    if (SUCCEEDED(Nncam_StartPullModeWithCallback(m_hcam, eventCallBack, this)))
+    if (m_isRecording)
     {
-        // 启用捕获按钮
+        cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, const_cast<uchar*>(image.bits()), image.bytesPerLine());
+        cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
+        m_videoWriter.write(mat);
+    }
+}
+
+void MainWindow::handleStillImageCaptured(const QImage &image)
+{
+        // 创建一个新的标签页
+        QWidget *newTab = new QWidget();
+        QLabel *imageLabel = new QLabel(newTab);
+
+        // 设置标签页的布局，确保QLabel自适应标签页大小
+        QVBoxLayout *layout = new QVBoxLayout(newTab);
+        layout->addWidget(imageLabel);
+        layout->setContentsMargins(0, 0, 0, 0);
+        newTab->setLayout(layout);
+
+        QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        imageLabel->setScaledContents(true);
+        imageLabel->setPixmap(pixmap);
+
+        // 将新创建的QImage存储到映射中，并添加标签页到tabWidget
+        ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
+        imageVector.append(image);
+}
+
+void MainWindow::handleCameraStartMessage(bool message)
+{
+    if (message)
+    {
+        // 修改相机开关按钮
+        ui->cameraButton->setText("关闭相机");
+        ui->searchCameraButton->setEnabled(false);
+
+        // 使能捕获与分辨率功能
         ui->captureButton->setEnabled(true);
-        // 启用录像按钮
         ui->videoButton->setEnabled(true);
-        // 启用分辨率选择下拉框
         ui->previewComboBox->setEnabled(true);
         ui->captureComboBox->setEnabled(true);
-        // 启用自动曝光复选框
         ui->autoExposureCheckBox->setEnabled(true);
 
-        // 获取当前自动曝光的状态，并设置复选框的选中状态
+        // 使能曝光功能
         int bAuto = 0;
         Nncam_get_AutoExpoEnable(m_hcam, &bAuto);
         ui->exposureTimeSlider->setEnabled(!(1 == bAuto));
@@ -546,123 +825,34 @@ void MainWindow::startCamera()
             ui->autoExposureCheckBox->setChecked(1 == bAuto);
         }
 
-        // 根据相机模型启用自动白平衡按钮
+        // 使能白平衡功能
         ui->whileBalanceButton->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
-        // 启用色温滑块
+        ui->defaultAwbButton->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
         ui->temperatureSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
-        // 启用色度滑块
         ui->tintSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
 
-        // 修改按钮
-        ui->cameraButton->setText("关闭相机");
-        ui->searchCameraButton->setEnabled(false);
+        // 使能颜色调整功能
+        ui->hueSlider->setEnabled(true);
+        ui->saturationSlider->setEnabled(true);
+        ui->brightnessSlider->setEnabled(true);
+        ui->contrastSlider->setEnabled(true);
+        ui->gammaSlider->setEnabled(true);
+        ui->defaultColorButton->setEnabled(true);
 
         // 启动一个定时器，每秒触发一次
         m_timer->start(1000);
     }
-    // 如果相机无法以回调模式启动，则关闭相机并显示警告消息
     else
     {
         closeCamera();
-        QMessageBox::warning(this, "Warning", u8"无法打开相机。");
+        QMessageBox::warning(this, "Warning", u8"无法打开相机。");   
     }
 }
 
-void MainWindow::eventCallBack(unsigned nEvent, void* pCallbackCtx)
+void MainWindow::handleEventCallBackMessage(QString message)
 {
-    MainWindow* pThis = reinterpret_cast<MainWindow*>(pCallbackCtx);
-    emit pThis->evtCallback(nEvent);
-}
-
-void MainWindow::handleImageEvent()
-{
-    unsigned width = 0, height = 0;
-    if (SUCCEEDED(Nncam_PullImage(m_hcam, m_pData, 24, &width, &height)))
-    {
-        QImage image(m_pData, width, height, QImage::Format_RGB888);
-        // QImage newimage = image.scaled(ui->imageView->width(), ui->imageView->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
-        QImage newimage = image.scaled(ui->previewTab->size(), Qt::KeepAspectRatio, Qt::FastTransformation);
-        ui->imageView->setPixmap(QPixmap::fromImage(newimage));
-        ui->imageView->setScaledContents(true);
-        // pixmapItem->setPixmap(framePixmap);
-        // previewView->update();
-
-        if (m_isRecording)
-        {
-            cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, const_cast<uchar*>(image.bits()), image.bytesPerLine());
-            cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
-            m_videoWriter.write(mat);
-        }
-    }
-}
-
-void MainWindow::handleExpoEvent()
-{
-    unsigned time = 0;
-    unsigned short gain = 0;
-    Nncam_get_ExpoTime(m_hcam, &time);
-    Nncam_get_ExpoAGain(m_hcam, &gain);
-
-    {
-        const QSignalBlocker blocker(ui->exposureTimeSlider);
-        ui->exposureTimeSlider->setValue(int(time));
-        ui->exposureTimeNumLabel->setText(QString::number(time));
-    }
-    {
-        const QSignalBlocker blocker(ui->gainSlider);
-        ui->gainSlider->setValue(int(gain));
-        ui->gainNumLabel->setText(QString::number(gain));
-    }
-}
-
-void MainWindow::handleTempTintEvent()
-{
-    int nTemp = 0, nTint = 0;
-    if (SUCCEEDED(Nncam_get_TempTint(m_hcam, &nTemp, &nTint)))
-    {
-        {
-            const QSignalBlocker blocker(ui->temperatureSlider);
-            ui->temperatureSlider->setValue(nTemp);
-            ui->temperatureNumLabel->setText(QString::number(nTemp));
-        }
-        {
-            const QSignalBlocker blocker(ui->tintSlider);
-            ui->tintSlider->setValue(nTint);
-            ui->tintNumLabel->setText(QString::number(nTint));
-        }
-    }
-}
-
-void MainWindow::handleStillImageEvent()
-{
-    unsigned width = 0, height = 0;
-    if (SUCCEEDED(Nncam_PullStillImage(m_hcam, nullptr, 24, &width, &height))) // peek
-    {
-        std::vector<uchar> vec(TDIBWIDTHBYTES(width * 24) * height);
-        if (SUCCEEDED(Nncam_PullStillImage(m_hcam, &vec[0], 24, &width, &height)))
-        {
-            QImage image(&vec[0], width, height, QImage::Format_RGB888);
-                
-            // 创建一个新的标签页
-            QWidget *newTab = new QWidget();
-            QLabel *imageLabel = new QLabel(newTab);
-
-            // 设置标签页的布局，确保QLabel自适应标签页大小
-            QVBoxLayout *layout = new QVBoxLayout(newTab);
-            layout->addWidget(imageLabel);
-            layout->setContentsMargins(0, 0, 0, 0);
-            newTab->setLayout(layout);
-
-            // QPixmap pixmap = QPixmap::fromImage(image);
-            QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            imageLabel->setScaledContents(true);
-            imageLabel->setPixmap(pixmap);
-
-            // 将新创建的QImage存储到映射中，并添加标签页到tabWidget
-            ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
-            imageVector.append(image);
-        }
-    }
+    closeCamera();
+    QMessageBox::warning(this, "Warning", message);
 }
 
 void MainWindow::closeTab(int index)
@@ -917,3 +1107,5 @@ void MainWindow::onSpeedChanged()
         tBackwardData = QByteArray::fromHex("fffffc180000000000000000");  //fc 18 00 00
     }
 }
+
+

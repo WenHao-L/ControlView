@@ -14,6 +14,8 @@
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
 #include <QByteArray>
+#include <QSerialPort>
+#include "cameraThread.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -42,8 +44,6 @@ private slots:
 
     void on_whileBalanceButton_clicked();
 
-    void on_defaultValueButton_clicked();
-
     void on_previewComboBox_currentIndexChanged(int index);
 
     void on_autoExposureCheckBox_stateChanged(int state);
@@ -55,6 +55,28 @@ private slots:
     void on_temperatureSlider_valueChanged(int value);
 
     void on_tintSlider_valueChanged(int value);
+
+    void on_defaultAwbButton_clicked();
+
+    void on_hueSlider_valueChanged(int value);
+
+    void on_saturationSlider_valueChanged(int value);
+
+    void on_brightnessSlider_valueChanged(int value);
+
+    void on_contrastSlider_valueChanged(int value);
+
+    void on_gammaSlider_valueChanged(int value);
+
+    void on_defaultColorButton_clicked();
+
+    void handleImageCaptured(const QImage &image);
+
+    void handleStillImageCaptured(const QImage &image);
+
+    void handleCameraStartMessage(bool message);
+
+    void handleEventCallBackMessage(QString message);
 
     // 串口
     void on_actionSerial_triggered(bool checked);
@@ -75,8 +97,6 @@ private slots:
 
     void onSpeedChanged();
 
-signals:
-    void evtCallback(unsigned nEvent);
 
 private:
     void openCamera();
@@ -85,31 +105,29 @@ private:
 
     void startCamera();
 
-    void handleImageEvent();
-
-    void handleExpoEvent();
-
-    void handleTempTintEvent();
-
-    void handleStillImageEvent();
-
     void closeTab(int index);
 
-    static void __stdcall eventCallBack(unsigned nEvent, void* pCallbackCtx);
-
-    Ui::MainWindow *ui;
-    cv::VideoWriter m_videoWriter;
-    bool m_isRecording;
-    NncamDeviceV2 m_cur;
-    HNncam        m_hcam;
-    QTimer*       m_timer;
-    unsigned      m_imgWidth;
-    unsigned      m_imgHeight;
-    uchar*        m_pData;
-    int           m_res;
-    int           m_temp;
-    int           m_tint;
-    unsigned      m_count;
+    Ui::MainWindow*      ui;
+    cv::VideoWriter      m_videoWriter;
+    bool                 m_isRecording;
+    NncamDeviceV2        m_cur;
+    HNncam               m_hcam;
+    QTimer*              m_timer;
+    unsigned             m_imgWidth;
+    unsigned             m_imgHeight;
+    uchar*               m_pData;
+    int                  m_res;
+    int                  m_time;
+    int                  m_gain;
+    int                  m_temp;
+    int                  m_tint;
+    int                  m_hue;
+    int                  m_saturation;
+    int                  m_brightness;
+    int                  m_contrast;
+    int                  m_gamma;
+    unsigned             m_count;
+    cameraThread*        m_cameraThread;
     QWidget*             previewTab;
     QGraphicsView*       previewView;
     QGraphicsScene*      previewScene;

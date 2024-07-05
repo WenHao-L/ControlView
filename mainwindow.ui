@@ -66,7 +66,7 @@
        <enum>QFrame::Plain</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="cameraPage">
        <property name="geometry">
@@ -293,8 +293,41 @@
         </item>
         <item>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="2" column="2">
-           <widget class="QComboBox" name="formatComboBox">
+          <item row="1" column="1">
+           <spacer name="captureSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="captureLabel">
+            <property name="text">
+             <string>捕获：</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <spacer name="previewSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="2">
+           <widget class="QComboBox" name="captureComboBox">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -313,66 +346,6 @@
              <string>预览：</string>
             </property>
            </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="captureLabel">
-            <property name="text">
-             <string>捕获：</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QComboBox" name="captureComboBox">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="formatLabel">
-            <property name="text">
-             <string>格式：</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <spacer name="previewSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="1" column="1">
-           <spacer name="captureSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="2" column="1">
-           <spacer name="formatSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
          </layout>
         </item>
@@ -635,7 +608,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="defaultValueButton">
+           <widget class="QPushButton" name="defaultAwbButton">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -649,10 +622,24 @@
        </layout>
       </widget>
       <widget class="QWidget" name="colorPage">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>295</width>
+         <height>450</height>
+        </rect>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>450</height>
+        </size>
+       </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>500</height>
+         <height>450</height>
         </size>
        </property>
        <attribute name="label">
@@ -660,16 +647,16 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_5">
         <item>
-         <layout class="QHBoxLayout" name="temperatureLayout_2">
+         <layout class="QHBoxLayout" name="hueLayout">
           <item>
-           <widget class="QLabel" name="temperatureLabel_2">
+           <widget class="QLabel" name="hueLabel">
             <property name="text">
-             <string>色调：</string>
+             <string>色度：</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="temperatureSpacer_2">
+           <spacer name="hueSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -682,7 +669,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="temperatureNumLabel_2">
+           <widget class="QLabel" name="hueNumLabel">
             <property name="text">
              <string>0</string>
             </property>
@@ -691,7 +678,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QSlider" name="temperatureSlider_2">
+         <widget class="QSlider" name="hueSlider">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -701,16 +688,16 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="temperatureLayout_3">
+         <layout class="QHBoxLayout" name="saturationLayout">
           <item>
-           <widget class="QLabel" name="temperatureLabel_3">
+           <widget class="QLabel" name="saturationLabel">
             <property name="text">
              <string>饱和度：</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="temperatureSpacer_3">
+           <spacer name="saturationSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -723,7 +710,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="temperatureNumLabel_3">
+           <widget class="QLabel" name="saturationNumLabel">
             <property name="text">
              <string>0</string>
             </property>
@@ -732,7 +719,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QSlider" name="temperatureSlider_3">
+         <widget class="QSlider" name="saturationSlider">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -742,16 +729,16 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="temperatureLayout_4">
+         <layout class="QHBoxLayout" name="brightnessLayout">
           <item>
-           <widget class="QLabel" name="temperatureLabel_4">
+           <widget class="QLabel" name="brightnessLabel">
             <property name="text">
              <string>亮度：</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="temperatureSpacer_4">
+           <spacer name="brightnessSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -764,7 +751,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="temperatureNumLabel_4">
+           <widget class="QLabel" name="brightnessNumLabel">
             <property name="text">
              <string>0</string>
             </property>
@@ -773,7 +760,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QSlider" name="temperatureSlider_4">
+         <widget class="QSlider" name="brightnessSlider">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -783,16 +770,16 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="temperatureLayout_5">
+         <layout class="QHBoxLayout" name="contrastLayout">
           <item>
-           <widget class="QLabel" name="temperatureLabel_5">
+           <widget class="QLabel" name="contrastLabel">
             <property name="text">
              <string>对比度：</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="temperatureSpacer_5">
+           <spacer name="contrastSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -805,7 +792,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="temperatureNumLabel_5">
+           <widget class="QLabel" name="contrastNumLabel">
             <property name="text">
              <string>0</string>
             </property>
@@ -814,7 +801,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QSlider" name="temperatureSlider_5">
+         <widget class="QSlider" name="contrastSlider">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -824,16 +811,16 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="temperatureLayout_6">
+         <layout class="QHBoxLayout" name="gammaLayout">
           <item>
-           <widget class="QLabel" name="temperatureLabel_6">
+           <widget class="QLabel" name="gammaLabel">
             <property name="text">
              <string>伽马：</string>
             </property>
            </widget>
           </item>
           <item>
-           <spacer name="temperatureSpacer_6">
+           <spacer name="gammaSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -846,7 +833,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="temperatureNumLabel_6">
+           <widget class="QLabel" name="gammaNumLabel">
             <property name="text">
              <string>0</string>
             </property>
@@ -855,7 +842,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QSlider" name="temperatureSlider_6">
+         <widget class="QSlider" name="gammaSlider">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -865,7 +852,10 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="defaultColorButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>默认值</string>
           </property>
