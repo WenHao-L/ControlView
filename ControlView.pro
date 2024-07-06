@@ -37,8 +37,9 @@ HEADERS += \
     crc16.h \
     gaugepanel.h \
     login.h \
-    mainwindow.h
-    nncam.h
+    mainwindow.h \
+    nncam.h \
+    rectItem.h
 
 FORMS += \
     login.ui \

@@ -16,6 +16,7 @@
 #include <QByteArray>
 #include <QSerialPort>
 #include "cameraThread.h"
+#include "rectItem.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -127,12 +128,16 @@ private:
     int                  m_contrast;
     int                  m_gamma;
     unsigned             m_count;
+    QGraphicsScene*      m_scene;
+    QGraphicsView*       m_imageView;
+    QGraphicsPixmapItem* m_pixmapItem;
+    RectItem*            m_exposureItem;
+    RectItem*            m_awbItem;
     cameraThread*        m_cameraThread;
     QWidget*             previewTab;
     QGraphicsView*       previewView;
     QGraphicsScene*      previewScene;
     QPixmap              framePixmap;
-    QGraphicsPixmapItem* pixmapItem;
     QVector<QImage>      imageVector;
 
     QByteArray rForwardData = QByteArray::fromHex("000000000000000100000000");

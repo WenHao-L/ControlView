@@ -6,7 +6,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "crc16.h"
-//#include "CustomTitleBar.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_timer(new QTimer(this))
     , m_imgWidth(0), m_imgHeight(0), m_pData(nullptr)
     , m_res(0), m_temp(NNCAM_TEMP_DEF), m_tint(NNCAM_TINT_DEF), m_count(0)
+    , m_pixmapItem(nullptr), m_exposureItem(nullptr)
     , m_serial(new QSerialPort(this))
 {
     ui->setupUi(this);
@@ -41,6 +42,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 微控制器可视化
     ui->serialWidget->setVisible(true);
+
+    // 初始化相机预览窗口
+    m_scene = new QGraphicsScene(this);
+    m_imageView = new QGraphicsView(m_scene, this);
+    ui->imageViewLayout->addWidget(m_imageView);
+
+    QSize viewSize = ui->previewTab->size();
+    m_scene->setSceneRect(0, 0, viewSize.width(), viewSize.height());
+
+    m_pixmapItem = new QGraphicsPixmapItem();
+    m_scene->addItem(m_pixmapItem);
 
     // 设置默认白平衡参数
     on_defaultAwbButton_clicked();
@@ -259,6 +271,15 @@ void MainWindow::on_previewComboBox_currentIndexChanged(int index)
 
 void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
 {
+    if (m_exposureItem == nullptr)
+    {
+        m_exposureItem = new RectItem();
+        m_exposureItem->setRect(0, 0, 100, 100);
+        m_exposureItem->setFrameSize(ui->previewTab->size());
+        m_scene->addItem(m_exposureItem);
+    }
+    m_exposureItem->setVisible(state ? 1 : 0);
+
     if (m_hcam)
     {
         if (SUCCEEDED(Nncam_put_AutoExpoEnable(m_hcam, state ? 1 : 0)))
@@ -697,14 +718,12 @@ int MainWindow::closeCamera()
     // 清空图像向量
     imageVector.clear();
 
-    ui->imageView->clear();
-    // 删除预览标签页相关的QWidget对象
-    // delete previewTab;
-    // previewTab = nullptr;
-    // delete previewView;
-    // previewView = nullptr;
-    // delete previewScene;
-    // previewScene = nullptr;
+    delete m_imageView;
+    m_imageView = nullptr;
+    delete m_scene;
+    m_scene = nullptr;
+    delete m_pixmapItem;
+    m_pixmapItem = nullptr;
 
     // 移除所有标签页
     while (ui->tabWidget->count() > 1)
@@ -768,8 +787,7 @@ void MainWindow::startCamera()
 void MainWindow::handleImageCaptured(const QImage &image)
 {
     QImage newimage = image.scaled(ui->previewTab->size(), Qt::KeepAspectRatio, Qt::FastTransformation);
-    ui->imageView->setPixmap(QPixmap::fromImage(newimage));
-    ui->imageView->setScaledContents(true);
+    m_pixmapItem->setPixmap(QPixmap::fromImage(newimage));
 
     if (m_isRecording)
     {

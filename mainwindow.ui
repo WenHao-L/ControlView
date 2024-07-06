@@ -352,7 +352,7 @@
         <item>
          <widget class="QCheckBox" name="autoExposureCheckBox">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>自动曝光</string>
@@ -885,19 +885,30 @@
          <attribute name="title">
           <string>画面预览</string>
          </attribute>
-         <widget class="QLabel" name="imageView">
-          <property name="geometry">
-           <rect>
-            <x>11</x>
-            <y>11</y>
-            <width>1500</width>
-            <height>900</height>
-           </rect>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <property name="leftMargin">
+           <number>0</number>
           </property>
-          <property name="text">
-           <string/>
+          <property name="topMargin">
+           <number>0</number>
           </property>
-         </widget>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="imageViewLayout">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+           </layout>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>
