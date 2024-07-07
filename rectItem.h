@@ -1,38 +1,35 @@
+#include <QObject>
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsRectItem>
 #include <QWidget>
 #include <QMouseEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QPen>
+#include <QColor>
 #include <QDebug>
 
-class RectItem : public QGraphicsRectItem {
+class RectItem : public QObject, public QGraphicsRectItem {
+    Q_OBJECT
+
 public:
     explicit RectItem(QGraphicsItem* parent = nullptr)
         : QGraphicsRectItem(parent), resizing(false), moving(false) {
         setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable);
     }
 
-    void setFrameSize(const QSizeF& size) {
+    void initRect(float left, float top, float right, float bottom, const QSizeF& size)
+    {
+        int x = int(left * size.width());
+        int y = int(right * size.width());
+        int width = int((right - left) *  size.width());
+        int height = int((top - bottom) *  size.height());
+        setRect(x, y, width, height);
         frameSize = size;
     }
 
-    QRectF getRectInPercentage() const {
-        if (frameSize.isEmpty()) return QRectF();
-
-        QRectF rect = this->rect();
-        qDebug() << rect.x();
-        qDebug() << rect.y();
-        qDebug() << rect.width();
-        qDebug() << rect.height();
-        qDebug() << frameSize.width();
-        qDebug() << frameSize.height();
-        qreal xPerc = rect.x() / frameSize.width();
-        qreal yPerc = rect.y() / frameSize.height();
-        qreal widthPerc = rect.width() / frameSize.width();
-        qreal heightPerc = rect.height() / frameSize.height();
-        
-        return QRectF(xPerc, yPerc, widthPerc, heightPerc);
+    void setColor(const QColor& color) {
+        setPen(QPen(color));
     }
 
 protected:
@@ -81,6 +78,19 @@ protected:
             startPos = event->pos();
         }
         // QGraphicsRectItem::mouseMoveEvent(event);
+
+        QRectF rect = this->rect();
+        qDebug() << rect.x();
+        qDebug() << rect.y();
+        qDebug() << rect.width();
+        qDebug() << rect.height();
+        qDebug() << frameSize.width();
+        qDebug() << frameSize.height();
+        float leftRatio = rect.x() / frameSize.width();
+        float topRatio = rect.y() / frameSize.height();
+        float rightRatio = (rect.x() + rect.width()) / frameSize.width();
+        float bottomRatio = (rect.y() + rect.height()) / frameSize.height();
+        emit rectChanged(leftRatio, topRatio, rightRatio, bottomRatio);
     }
 
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override {
@@ -88,6 +98,9 @@ protected:
         moving = false;
         // QGraphicsRectItem::mouseReleaseEvent(event);
     }
+
+signals:
+    void rectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
 
 private:
     bool isResizingCorner(const QPointF& pos) const {

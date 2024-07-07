@@ -19,5 +19,6 @@
         <file>images/search_serial_disable.png</file>
         <file>images/video_disbale.png</file>
         <file>images/gdut.jpg</file>
+        <file>images/color.png</file>
     </qresource>
 </RCC>

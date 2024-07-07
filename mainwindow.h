@@ -49,6 +49,8 @@ private slots:
 
     void on_autoExposureCheckBox_stateChanged(int state);
 
+    void on_exposureTargetSlider_valueChanged(int value);
+
     void on_exposureTimeSlider_valueChanged(int value);
 
     void on_gainSlider_valueChanged(int value);
@@ -70,6 +72,10 @@ private slots:
     void on_gammaSlider_valueChanged(int value);
 
     void on_defaultColorButton_clicked();
+
+    void onAERectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
+
+    // void onAWBRectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
 
     void handleImageCaptured(const QImage &image);
 
@@ -118,6 +124,7 @@ private:
     unsigned             m_imgHeight;
     uchar*               m_pData;
     int                  m_res;
+    int                  m_target;
     int                  m_time;
     int                  m_gain;
     int                  m_temp;
@@ -134,6 +141,8 @@ private:
     RectItem*            m_exposureItem;
     RectItem*            m_awbItem;
     cameraThread*        m_cameraThread;
+    RECT                 m_awbRect;
+    RECT                 m_aeRect;
     QWidget*             previewTab;
     QGraphicsView*       previewView;
     QGraphicsScene*      previewScene;

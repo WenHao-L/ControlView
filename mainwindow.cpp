@@ -54,6 +54,14 @@ MainWindow::MainWindow(QWidget *parent)
     m_pixmapItem = new QGraphicsPixmapItem();
     m_scene->addItem(m_pixmapItem);
 
+    // 设置默认自动曝光目标
+    {
+        const QSignalBlocker blocker(ui->exposureTargetSlider);
+        ui->exposureTargetNumLabel->setText(QString::number(120));
+        ui->exposureTargetSlider->setRange(16, 220);
+        ui->exposureTargetSlider->setValue(120);
+    }
+
     // 设置默认白平衡参数
     on_defaultAwbButton_clicked();
 
@@ -271,35 +279,117 @@ void MainWindow::on_previewComboBox_currentIndexChanged(int index)
 
 void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
 {
-    if (m_exposureItem == nullptr)
-    {
-        m_exposureItem = new RectItem();
-        m_exposureItem->setRect(0, 0, 100, 100);
-        m_exposureItem->setFrameSize(ui->previewTab->size());
-        m_scene->addItem(m_exposureItem);
-    }
-    m_exposureItem->setVisible(state ? 1 : 0);
+    ui->exposureTargetSlider->setEnabled(state);
+    ui->exposureTimeSlider->setEnabled(!state);
+    ui->gainSlider->setEnabled(!state);
 
-    if (m_hcam)
+    if (state)
     {
-        if (SUCCEEDED(Nncam_put_AutoExpoEnable(m_hcam, state ? 1 : 0)))
+        if (m_exposureItem == nullptr)
         {
-            ui->exposureTimeSlider->setEnabled(!state);
-            ui->gainSlider->setEnabled(!state);
+            if (m_hcam)
+            {
+                if (SUCCEEDED(Nncam_get_AEAuxRect(m_hcam, &m_aeRect)))
+                {
+                    float left = m_aeRect.left / m_imgWidth;
+                    float top = m_aeRect.top / m_imgHeight;
+                    float right = m_aeRect.right / m_imgWidth;
+                    float bottom = m_aeRect.bottom / m_imgHeight;
+
+                    m_exposureItem = new RectItem();
+                    m_exposureItem->initRect(left, top, right, bottom, ui->previewTab->size());
+                    m_exposureItem->setColor(Qt::red);
+                    m_scene->addItem(m_exposureItem);
+                    connect(m_exposureItem, &RectItem::rectChanged, this, &MainWindow::onAERectChanged);
+
+                    onAERectChanged(left, top, right, bottom);
+                }
+            }
         }
         else
         {
-            // 获取当前自动曝光的状态，并设置复选框的选中状态
-            int bAuto = 0;
-            Nncam_get_AutoExpoEnable(m_hcam, &bAuto);
-            ui->exposureTimeSlider->setEnabled(!(1 == bAuto));
-            ui->gainSlider->setEnabled(!(1 == bAuto));
+            if (m_hcam)
             {
-                const QSignalBlocker blocker(ui->autoExposureCheckBox);
-                ui->autoExposureCheckBox->setChecked(1 == bAuto);
+                if (SUCCEEDED(Nncam_put_AutoExpoEnable(m_hcam, 1)))
+                {}
+                else
+                {
+                    QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。");
+                }
             }
-            QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。"); 
         }
+
+        unsigned short target = 0;
+        if (m_hcam)
+        {
+            if (SUCCEEDED(Nncam_get_AutoExpoTarget(m_hcam, &target)))
+            {
+                {
+                    const QSignalBlocker blocker(ui->exposureTargetSlider);
+                    ui->exposureTargetSlider->setValue(int(target));
+                    ui->exposureTargetNumLabel->setText(QString::number(target));
+                }
+            }
+        }
+
+        m_exposureItem->setVisible(1);
+        ui->exposureTargetSlider->setEnabled(true);
+        ui->exposureTimeSlider->setEnabled(false);
+        ui->gainSlider->setEnabled(false);
+    }
+    else
+    {
+        unsigned time = 0;
+        if (m_hcam)
+        {
+            if (SUCCEEDED(Nncam_get_ExpoTime(m_hcam, &time)))
+            {
+                {
+                    const QSignalBlocker blocker(ui->exposureTimeSlider);
+                    ui->exposureTimeSlider->setValue(int(time));
+                    ui->exposureTimeNumLabel->setText(QString::number(time));
+                }
+            }
+        }
+
+        unsigned short gain = 0;
+        if (m_hcam)
+        {
+            if (SUCCEEDED(Nncam_get_ExpoAGain(m_hcam, &gain)))
+            {
+                {
+                    const QSignalBlocker blocker(ui->gainSlider);
+                    ui->gainSlider->setValue(int(gain));
+                    ui->gainNumLabel->setText(QString::number(gain));
+                }
+            }
+        }
+
+        m_exposureItem->setVisible(0);
+        ui->exposureTargetSlider->setEnabled(false);
+        ui->exposureTimeSlider->setEnabled(true);
+        ui->gainSlider->setEnabled(true);
+    }
+}
+
+void MainWindow::on_exposureTargetSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (ui->autoExposureCheckBox->isChecked())
+            if (SUCCEEDED(Nncam_put_AutoExpoTarget(m_hcam, static_cast<unsigned short>(value))))
+            {
+                m_target = value;
+                ui->exposureTargetNumLabel->setText(QString::number(value));
+            }
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->exposureTargetSlider);
+                    ui->exposureTargetSlider->setValue(m_target);
+                }
+                QMessageBox::warning(this, "Warning", u8"调整自动曝光目标失败。"); 
+            }
     }
 }
 
@@ -539,6 +629,31 @@ void MainWindow::on_defaultColorButton_clicked()
         ui->gammaNumLabel->setText(QString::number(100));
         ui->gammaSlider->setRange(20, 180);
         ui->gammaSlider->setValue(100);
+    }
+}
+
+void MainWindow::onAERectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio)
+{
+    m_aeRect.left = static_cast<int>(leftRatio * m_imgWidth);
+    m_aeRect.top = static_cast<int>(topRatio * m_imgHeight);
+    m_aeRect.right = static_cast<int>(rightRatio * m_imgWidth);
+    m_aeRect.bottom = static_cast<int>(bottomRatio * m_imgHeight);
+
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_AEAuxRect(m_hcam, &m_aeRect)))
+        {
+            if (SUCCEEDED(Nncam_put_AutoExpoEnable(m_hcam, 1)))
+            {}
+            else
+            {
+                QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。");
+            }
+        }
+        else
+        {
+            QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。");
+        }
     }
 }
 
@@ -836,6 +951,7 @@ void MainWindow::handleCameraStartMessage(bool message)
         // 使能曝光功能
         int bAuto = 0;
         Nncam_get_AutoExpoEnable(m_hcam, &bAuto);
+        ui->exposureTargetSlider->setEnabled(1 == bAuto);
         ui->exposureTimeSlider->setEnabled(!(1 == bAuto));
         ui->gainSlider->setEnabled(!(1 == bAuto));
         {
