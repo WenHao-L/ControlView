@@ -86,10 +86,10 @@ protected:
         qDebug() << rect.height();
         qDebug() << frameSize.width();
         qDebug() << frameSize.height();
-        float leftRatio = rect.x() / frameSize.width();
-        float topRatio = rect.y() / frameSize.height();
-        float rightRatio = (rect.x() + rect.width()) / frameSize.width();
-        float bottomRatio = (rect.y() + rect.height()) / frameSize.height();
+        float leftRatio = static_cast<float>(rect.x()) / frameSize.width();
+        float topRatio = static_cast<float>(rect.y()) / frameSize.height();
+        float rightRatio = static_cast<float>((rect.x() + rect.width())) / frameSize.width();
+        float bottomRatio = static_cast<float>((rect.y() + rect.height())) / frameSize.height();
         emit rectChanged(leftRatio, topRatio, rightRatio, bottomRatio);
     }
 

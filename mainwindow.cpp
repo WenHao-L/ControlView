@@ -291,10 +291,18 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
             {
                 if (SUCCEEDED(Nncam_get_AEAuxRect(m_hcam, &m_aeRect)))
                 {
-                    float left = m_aeRect.left / m_imgWidth;
-                    float top = m_aeRect.top / m_imgHeight;
-                    float right = m_aeRect.right / m_imgWidth;
-                    float bottom = m_aeRect.bottom / m_imgHeight;
+                    QString orectString = QString("oRect(left: %1, top: %2, right: %3, bottom: %4)")
+                            .arg(m_aeRect.left)
+                            .arg(m_aeRect.top)
+                            .arg(m_aeRect.right)
+                            .arg(m_aeRect.bottom);
+
+                    qDebug() << orectString; // 输出格式化后的字符串
+
+                    float left = static_cast<float>(m_aeRect.left) / m_imgWidth;
+                    float top = static_cast<float>(m_aeRect.top) / m_imgHeight;
+                    float right = static_cast<float>(m_aeRect.right) / m_imgWidth;
+                    float bottom = static_cast<float>(m_aeRect.bottom) / m_imgHeight;
 
                     m_exposureItem = new RectItem();
                     m_exposureItem->initRect(left, top, right, bottom, ui->previewTab->size());
@@ -639,6 +647,13 @@ void MainWindow::onAERectChanged(float leftRatio, float topRatio, float rightRat
     m_aeRect.right = static_cast<int>(rightRatio * m_imgWidth);
     m_aeRect.bottom = static_cast<int>(bottomRatio * m_imgHeight);
 
+    QString rectString = QString("Rect(left: %1, top: %2, right: %3, bottom: %4)")
+                             .arg(m_aeRect.left)
+                             .arg(m_aeRect.top)
+                             .arg(m_aeRect.right)
+                             .arg(m_aeRect.bottom);
+
+    qDebug() << rectString; // 输出格式化后的字符串
     if (m_hcam)
     {
         if (SUCCEEDED(Nncam_put_AEAuxRect(m_hcam, &m_aeRect)))
@@ -647,11 +662,13 @@ void MainWindow::onAERectChanged(float leftRatio, float topRatio, float rightRat
             {}
             else
             {
+                qDebug() << "auto ae设置失败\n";
                 QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。");
             }
         }
         else
         {
+            qDebug() << "ae rect 设置失败\n";
             QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。");
         }
     }
@@ -664,8 +681,8 @@ void MainWindow::openCamera()
     if (m_hcam)
     {
         // 设置帧速率级别
-        unsigned short maxSpeed = Nncam_get_MaxSpeed(m_hcam);
-        Nncam_put_Speed(m_hcam, maxSpeed);
+        // unsigned short maxSpeed = Nncam_get_MaxSpeed(m_hcam);
+        // Nncam_put_Speed(m_hcam, maxSpeed);
 
         // 设置为RGB字节序（0：RGB，1：BGR），因为QImage使用RGB字节序
         Nncam_put_Option(m_hcam, NNCAM_OPTION_BYTEORDER, 0);
