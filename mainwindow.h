@@ -43,8 +43,6 @@ private slots:
 
     void on_videoButton_clicked();
 
-    void on_whileBalanceButton_clicked();
-
     void on_previewComboBox_currentIndexChanged(int index);
 
     void on_autoExposureCheckBox_stateChanged(int state);
@@ -55,11 +53,23 @@ private slots:
 
     void on_gainSlider_valueChanged(int value);
 
+    void on_autoAwbCheckBox_stateChanged(int state);
+
     void on_temperatureSlider_valueChanged(int value);
 
     void on_tintSlider_valueChanged(int value);
 
     void on_defaultAwbButton_clicked();
+
+    void on_autoAbbCheckBox_stateChanged(int state);
+
+    void on_redSlider_valueChanged(int value);
+
+    void on_greenSlider_valueChanged(int value);
+
+    void on_blueSlider_valueChanged(int value);
+
+    void on_defaultAbbButton_clicked();
 
     void on_hueSlider_valueChanged(int value);
 
@@ -75,7 +85,9 @@ private slots:
 
     void onAERectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
 
-    // void onAWBRectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
+    void onAWBRectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
+
+    void onABBRectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
 
     void handleImageCaptured(const QImage &image);
 
@@ -106,6 +118,8 @@ private slots:
 
 
 private:
+    void resizeEvent(QResizeEvent *event);
+
     void openCamera();
 
     int closeCamera();
@@ -122,6 +136,8 @@ private:
     QTimer*              m_timer;
     unsigned             m_imgWidth;
     unsigned             m_imgHeight;
+    unsigned             m_previewWidth;
+    unsigned             m_previewHeight;
     uchar*               m_pData;
     int                  m_res;
     int                  m_target;
@@ -129,6 +145,10 @@ private:
     int                  m_gain;
     int                  m_temp;
     int                  m_tint;
+    unsigned short       m_aSub[3] = {0, 0, 0};
+    unsigned short       m_red;
+    unsigned short       m_green;
+    unsigned short       m_blue;
     int                  m_hue;
     int                  m_saturation;
     int                  m_brightness;
@@ -138,11 +158,13 @@ private:
     QGraphicsScene*      m_scene;
     QGraphicsView*       m_imageView;
     QGraphicsPixmapItem* m_pixmapItem;
-    RectItem*            m_exposureItem;
+    RectItem*            m_aeItem;
     RectItem*            m_awbItem;
+    RectItem*            m_abbItem;
     cameraThread*        m_cameraThread;
-    RECT                 m_awbRect;
     RECT                 m_aeRect;
+    RECT                 m_awbRect;
+    RECT                 m_abbRect;
     QWidget*             previewTab;
     QGraphicsView*       previewView;
     QGraphicsScene*      previewScene;

@@ -14,9 +14,10 @@ MainWindow::MainWindow(QWidget *parent)
     , m_isRecording(false)
     , m_hcam(nullptr)
     , m_timer(new QTimer(this))
-    , m_imgWidth(0), m_imgHeight(0), m_pData(nullptr)
-    , m_res(0), m_temp(NNCAM_TEMP_DEF), m_tint(NNCAM_TINT_DEF), m_count(0)
-    , m_pixmapItem(nullptr), m_exposureItem(nullptr)
+    , m_imgWidth(5440), m_imgHeight(3648), m_pData(nullptr)
+    , m_res(0), m_temp(NNCAM_TEMP_DEF), m_tint(NNCAM_TINT_DEF)
+    , m_red(0), m_green(0), m_blue(0), m_count(0)
+    , m_pixmapItem(nullptr), m_aeItem(nullptr), m_awbItem(nullptr), m_abbItem(nullptr)
     , m_serial(new QSerialPort(this))
 {
     ui->setupUi(this);
@@ -48,8 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_imageView = new QGraphicsView(m_scene, this);
     ui->imageViewLayout->addWidget(m_imageView);
 
-    QSize viewSize = ui->previewTab->size();
-    m_scene->setSceneRect(0, 0, viewSize.width(), viewSize.height());
+    // QSize viewSize = ui->previewTab->size();
+    // m_scene->setSceneRect(0, 0, viewSize.width(), viewSize.height());
 
     m_pixmapItem = new QGraphicsPixmapItem();
     m_scene->addItem(m_pixmapItem);
@@ -57,16 +58,76 @@ MainWindow::MainWindow(QWidget *parent)
     // 设置默认自动曝光目标
     {
         const QSignalBlocker blocker(ui->exposureTargetSlider);
-        ui->exposureTargetNumLabel->setText(QString::number(120));
-        ui->exposureTargetSlider->setRange(16, 220);
-        ui->exposureTargetSlider->setValue(120);
+        ui->exposureTargetNumLabel->setText(QString::number(NNCAM_AETARGET_DEF));
+        ui->exposureTargetSlider->setRange(NNCAM_AETARGET_MIN, NNCAM_AETARGET_MAX);
+        ui->exposureTargetSlider->setValue(NNCAM_AETARGET_DEF);
     }
 
     // 设置默认白平衡参数
-    on_defaultAwbButton_clicked();
+    {
+        const QSignalBlocker blocker(ui->temperatureSlider);
+        ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
+        ui->temperatureSlider->setRange(NNCAM_TEMP_MIN, NNCAM_TEMP_MAX);
+        ui->temperatureSlider->setValue(NNCAM_TEMP_DEF);
+    }
+    {
+        const QSignalBlocker blocker(ui->tintSlider);
+        ui->tintNumLabel->setText(QString::number(NNCAM_TINT_DEF));
+        ui->tintSlider->setRange(NNCAM_TINT_MIN, NNCAM_TINT_MAX);
+        ui->tintSlider->setValue(NNCAM_TINT_DEF);
+    }
+
+    // 设置默认黑平衡参数
+    {
+        const QSignalBlocker blocker(ui->redSlider);
+        ui->redNumLabel->setText(QString::number(0));
+        ui->redSlider->setRange(0, 65535);
+        ui->redSlider->setValue(0);
+    }
+    {
+        const QSignalBlocker blocker(ui->greenSlider);
+        ui->greenNumLabel->setText(QString::number(0));
+        ui->greenSlider->setRange(0, 65535);
+        ui->greenSlider->setValue(0);
+    }
+    {
+        const QSignalBlocker blocker(ui->blueSlider);
+        ui->blueNumLabel->setText(QString::number(0));
+        ui->blueSlider->setRange(0, 65535);
+        ui->blueSlider->setValue(0);
+    }
 
     // 设置默认颜色调整参数
-    on_defaultColorButton_clicked();
+    {
+        const QSignalBlocker blocker(ui->hueSlider);
+        ui->hueNumLabel->setText(QString::number(NNCAM_HUE_DEF));
+        ui->hueSlider->setRange(NNCAM_HUE_MIN, NNCAM_HUE_MAX);
+        ui->hueSlider->setValue(NNCAM_HUE_DEF);
+    }
+    {
+        const QSignalBlocker blocker(ui->saturationSlider);
+        ui->saturationNumLabel->setText(QString::number(NNCAM_SATURATION_DEF));
+        ui->saturationSlider->setRange(NNCAM_SATURATION_MIN, NNCAM_SATURATION_MAX);
+        ui->saturationSlider->setValue(NNCAM_SATURATION_DEF);
+    }
+    {
+        const QSignalBlocker blocker(ui->brightnessSlider);
+        ui->brightnessNumLabel->setText(QString::number(NNCAM_BRIGHTNESS_DEF));
+        ui->brightnessSlider->setRange(NNCAM_BRIGHTNESS_MIN, NNCAM_BRIGHTNESS_MAX);
+        ui->brightnessSlider->setValue(NNCAM_BRIGHTNESS_DEF);
+    }
+    {
+        const QSignalBlocker blocker(ui->contrastSlider);
+        ui->contrastNumLabel->setText(QString::number(NNCAM_CONTRAST_DEF));
+        ui->contrastSlider->setRange(NNCAM_CONTRAST_MIN, NNCAM_CONTRAST_MAX);
+        ui->contrastSlider->setValue(NNCAM_CONTRAST_DEF);
+    }
+    {
+        const QSignalBlocker blocker(ui->gammaSlider);
+        ui->gammaNumLabel->setText(QString::number(NNCAM_GAMMA_DEF));
+        ui->gammaSlider->setRange(NNCAM_GAMMA_MIN, NNCAM_GAMMA_MAX);
+        ui->gammaSlider->setValue(NNCAM_GAMMA_DEF);
+    }
 
     // 定时器更新帧率显示
     connect(m_timer, &QTimer::timeout, this, [this]()
@@ -81,6 +142,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->lowSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
     connect(ui->mediumSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
     connect(ui->highSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
+
+    this->showMaximized();
 }
 
 MainWindow::~MainWindow()
@@ -117,6 +180,17 @@ void MainWindow::closeEvent(QCloseEvent* event)
         delete[] m_serial;
         m_serial = nullptr;
     }
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);
+
+    QRect layoutRect = ui->imageViewLayout->geometry();
+    m_previewWidth = layoutRect.width() - 30;
+    float ratio = float(m_previewWidth) / m_imgWidth;
+    m_previewHeight = int(m_imgHeight * ratio);
+    m_scene->setSceneRect(0, 0, m_previewWidth, m_previewHeight);
 }
 
 void MainWindow::on_searchCameraButton_clicked()
@@ -247,20 +321,6 @@ void MainWindow::on_videoButton_clicked()
     }
 }
 
-void MainWindow::on_whileBalanceButton_clicked()
-{
-    if (m_hcam)
-    {
-        if (SUCCEEDED(Nncam_AwbOnce(m_hcam, nullptr, nullptr)))
-        {
-        }
-        else
-        {
-            QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。"); 
-        }
-    }
-}
-
 void MainWindow::on_previewComboBox_currentIndexChanged(int index)
 {
     if (m_hcam)
@@ -285,7 +345,7 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
 
     if (state)
     {
-        if (m_exposureItem == nullptr)
+        if (m_aeItem == nullptr)
         {
             if (m_hcam)
             {
@@ -304,11 +364,11 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
                     float right = static_cast<float>(m_aeRect.right) / m_imgWidth;
                     float bottom = static_cast<float>(m_aeRect.bottom) / m_imgHeight;
 
-                    m_exposureItem = new RectItem();
-                    m_exposureItem->initRect(left, top, right, bottom, ui->previewTab->size());
-                    m_exposureItem->setColor(Qt::red);
-                    m_scene->addItem(m_exposureItem);
-                    connect(m_exposureItem, &RectItem::rectChanged, this, &MainWindow::onAERectChanged);
+                    m_aeItem = new RectItem();
+                    m_aeItem->initRect(left, top, right, bottom, m_previewWidth, m_previewHeight);
+                    m_aeItem->setColor(Qt::red);
+                    m_scene->addItem(m_aeItem);
+                    connect(m_aeItem, &RectItem::rectChanged, this, &MainWindow::onAERectChanged);
 
                     onAERectChanged(left, top, right, bottom);
                 }
@@ -340,16 +400,13 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
             }
         }
 
-        m_exposureItem->setVisible(1);
-        ui->exposureTargetSlider->setEnabled(true);
-        ui->exposureTimeSlider->setEnabled(false);
-        ui->gainSlider->setEnabled(false);
+        m_aeItem->setVisible(1);
     }
     else
     {
-        unsigned time = 0;
         if (m_hcam)
         {
+            unsigned time = 0;
             if (SUCCEEDED(Nncam_get_ExpoTime(m_hcam, &time)))
             {
                 {
@@ -360,9 +417,9 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
             }
         }
 
-        unsigned short gain = 0;
         if (m_hcam)
         {
+            unsigned short gain = 0;
             if (SUCCEEDED(Nncam_get_ExpoAGain(m_hcam, &gain)))
             {
                 {
@@ -373,10 +430,7 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
             }
         }
 
-        m_exposureItem->setVisible(0);
-        ui->exposureTargetSlider->setEnabled(false);
-        ui->exposureTimeSlider->setEnabled(true);
-        ui->gainSlider->setEnabled(true);
+        m_aeItem->setVisible(0);
     }
 }
 
@@ -385,6 +439,7 @@ void MainWindow::on_exposureTargetSlider_valueChanged(int value)
     if (m_hcam)
     {
         if (ui->autoExposureCheckBox->isChecked())
+        {
             if (SUCCEEDED(Nncam_put_AutoExpoTarget(m_hcam, static_cast<unsigned short>(value))))
             {
                 m_target = value;
@@ -398,6 +453,7 @@ void MainWindow::on_exposureTargetSlider_valueChanged(int value)
                 }
                 QMessageBox::warning(this, "Warning", u8"调整自动曝光目标失败。"); 
             }
+        }
     }
 }
 
@@ -406,6 +462,7 @@ void MainWindow::on_exposureTimeSlider_valueChanged(int value)
     if (m_hcam)
     {
         if (!ui->autoExposureCheckBox->isChecked())
+        {
             if (SUCCEEDED(Nncam_put_ExpoTime(m_hcam, static_cast<unsigned>(value))))
             {
                 m_time = value;
@@ -419,6 +476,7 @@ void MainWindow::on_exposureTimeSlider_valueChanged(int value)
                 }
                 QMessageBox::warning(this, "Warning", u8"调整曝光时间失败。"); 
             }
+        }
     }
 }
 
@@ -427,6 +485,7 @@ void MainWindow::on_gainSlider_valueChanged(int value)
     if (m_hcam)
     {
         if (!ui->autoExposureCheckBox->isChecked())
+        {
             if (SUCCEEDED(Nncam_put_ExpoAGain(m_hcam, static_cast<unsigned short>(value))))
             {
                 m_gain = value;
@@ -440,6 +499,82 @@ void MainWindow::on_gainSlider_valueChanged(int value)
                 }
                 QMessageBox::warning(this, "Warning", u8"调整曝光增益失败。"); 
             }
+        }
+    }
+}
+
+void MainWindow::on_autoAwbCheckBox_stateChanged(int state)
+{
+    ui->temperatureSlider->setEnabled(!state);
+    ui->tintSlider->setEnabled(!state);
+
+    if (state)
+    {
+        if (m_awbItem == nullptr)
+        {
+            if (m_hcam)
+            {
+                if (SUCCEEDED(Nncam_get_AWBAuxRect(m_hcam, &m_awbRect)))
+                {
+                    QString orectString = QString("oRect(left: %1, top: %2, right: %3, bottom: %4)")
+                            .arg(m_awbRect.left)
+                            .arg(m_awbRect.top)
+                            .arg(m_awbRect.right)
+                            .arg(m_awbRect.bottom);
+
+                    qDebug() << orectString; // 输出格式化后的字符串
+
+                    float left = static_cast<float>(m_awbRect.left) / m_imgWidth;
+                    float top = static_cast<float>(m_awbRect.top) / m_imgHeight;
+                    float right = static_cast<float>(m_awbRect.right) / m_imgWidth;
+                    float bottom = static_cast<float>(m_awbRect.bottom) / m_imgHeight;
+
+                    m_awbItem = new RectItem();
+                    m_awbItem->initRect(left, top, right, bottom, m_previewWidth, m_previewHeight);
+                    m_awbItem->setColor(Qt::blue);
+                    m_scene->addItem(m_awbItem);
+                    connect(m_awbItem, &RectItem::rectChanged, this, &MainWindow::onAWBRectChanged);
+
+                    onAWBRectChanged(left, top, right, bottom);
+                }
+            }
+        }
+        else
+        {
+            if (m_hcam)
+            {
+                if (SUCCEEDED(Nncam_AwbOnce(m_hcam, nullptr, nullptr)))
+                {
+                }
+                else
+                {
+                    QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。"); 
+                }
+            }
+        }
+        m_awbItem->setVisible(1);
+    }
+    else
+    {
+        if (m_hcam)
+        {
+            int nTemp = 0, nTint = 0;
+            if (SUCCEEDED(Nncam_get_TempTint(m_hcam, &nTemp, &nTint)))
+            {
+                {
+                    const QSignalBlocker blocker(ui->temperatureSlider);
+                    ui->temperatureSlider->setValue(nTemp);
+                    ui->temperatureNumLabel->setText(QString::number(nTemp));
+                }
+                {
+                    const QSignalBlocker blocker(ui->tintSlider);
+                    ui->tintSlider->setValue(nTint);
+                    ui->tintNumLabel->setText(QString::number(nTint));
+                }
+            }
+        }
+
+        m_awbItem->setVisible(0);
     }
 }
 
@@ -447,18 +582,21 @@ void MainWindow::on_temperatureSlider_valueChanged(int value)
 {
     if (m_hcam)
     {
-        if (SUCCEEDED(Nncam_put_TempTint(m_hcam, value, m_tint)))
+        if (!ui->autoAwbCheckBox->isChecked())
         {
-            m_temp = value;
-            ui->temperatureNumLabel->setText(QString::number(value));
-        }
-        else
-        {
+            if (SUCCEEDED(Nncam_put_TempTint(m_hcam, value, m_tint)))
             {
-                const QSignalBlocker blocker(ui->temperatureSlider);
-                ui->temperatureSlider->setValue(m_temp);
+                m_temp = value;
+                ui->temperatureNumLabel->setText(QString::number(value));
             }
-            QMessageBox::warning(this, "Warning", u8"调整色温失败。"); 
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->temperatureSlider);
+                    ui->temperatureSlider->setValue(m_temp);
+                }
+                QMessageBox::warning(this, "Warning", u8"调整色温失败。"); 
+            }
         }
     }
 }
@@ -467,37 +605,190 @@ void MainWindow::on_tintSlider_valueChanged(int value)
 {
     if (m_hcam)
     {
-        if (SUCCEEDED(Nncam_put_TempTint(m_hcam, m_temp, value)))
+        if (!ui->autoAwbCheckBox->isChecked())
         {
-            m_tint = value;
-            ui->tintNumLabel->setText(QString::number(value));
-        }
-        else
-        {
+            if (SUCCEEDED(Nncam_put_TempTint(m_hcam, m_temp, value)))
             {
-                const QSignalBlocker blocker(ui->tintSlider);
-                ui->tintSlider->setValue(m_temp);
+                m_tint = value;
+                ui->tintNumLabel->setText(QString::number(value));
             }
-            QMessageBox::warning(this, "Warning", u8"调整Tint失败。");          
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->tintSlider);
+                    ui->tintSlider->setValue(m_tint);
+                }
+                QMessageBox::warning(this, "Warning", u8"调整Tint失败。");          
+            }
         }
     }
 }
 
 void MainWindow::on_defaultAwbButton_clicked()
 {
-    // 设置白平衡默认参数
+    ui->temperatureSlider->setValue(NNCAM_TEMP_DEF);
+    ui->tintSlider->setValue(NNCAM_TINT_DEF);
+}
+
+void MainWindow::on_autoAbbCheckBox_stateChanged(int state)
+{
+    ui->redSlider->setEnabled(!state);
+    ui->greenSlider->setEnabled(!state);
+    ui->blueSlider->setEnabled(!state);
+
+    if (state)
     {
-        const QSignalBlocker blocker(ui->temperatureSlider);
-        ui->temperatureNumLabel->setText(QString::number(NNCAM_TEMP_DEF));
-        ui->temperatureSlider->setRange(NNCAM_TEMP_MIN, NNCAM_TEMP_MAX);
-        ui->temperatureSlider->setValue(NNCAM_TEMP_DEF);
+        if (m_abbItem == nullptr)
+        {
+            if (m_hcam)
+            {
+                if (SUCCEEDED(Nncam_get_ABBAuxRect(m_hcam, &m_abbRect)))
+                {
+                    QString orectString = QString("oRect(left: %1, top: %2, right: %3, bottom: %4)")
+                            .arg(m_abbRect.left)
+                            .arg(m_abbRect.top)
+                            .arg(m_abbRect.right)
+                            .arg(m_abbRect.bottom);
+
+                    qDebug() << orectString; // 输出格式化后的字符串
+
+                    float left = static_cast<float>(m_abbRect.left) / m_imgWidth;
+                    float top = static_cast<float>(m_abbRect.top) / m_imgHeight;
+                    float right = static_cast<float>(m_abbRect.right) / m_imgWidth;
+                    float bottom = static_cast<float>(m_abbRect.bottom) / m_imgHeight;
+
+                    m_abbItem = new RectItem();
+                    m_abbItem->initRect(left, top, right, bottom, m_previewWidth, m_previewHeight);
+                    m_abbItem->setColor(Qt::green);
+                    m_scene->addItem(m_abbItem);
+                    connect(m_abbItem, &RectItem::rectChanged, this, &MainWindow::onABBRectChanged);
+
+                    onABBRectChanged(left, top, right, bottom);
+                }
+            }
+        }
+        else
+        {
+            if (m_hcam)
+            {
+                if (SUCCEEDED(Nncam_AbbOnce(m_hcam, nullptr, nullptr)))
+                {
+                }
+                else
+                {
+                    QMessageBox::warning(this, "Warning", u8"自动黑平衡调整失败。"); 
+                }
+            }
+        }
+        m_abbItem->setVisible(1);
     }
+    else
     {
-        const QSignalBlocker blocker(ui->tintSlider);
-        ui->tintNumLabel->setText(QString::number(NNCAM_TINT_DEF));
-        ui->tintSlider->setRange(NNCAM_TINT_MIN, NNCAM_TINT_MAX);
-        ui->tintSlider->setValue(NNCAM_TINT_DEF);
+        if (m_hcam)
+        {
+            if (SUCCEEDED(Nncam_get_BlackBalance(m_hcam, m_aSub)))
+            {
+                m_red = m_aSub[0];
+                m_green = m_aSub[1];
+                m_blue = m_aSub[2];
+                {
+                    const QSignalBlocker blocker(ui->redSlider);
+                    ui->redSlider->setValue(m_red);
+                    ui->redNumLabel->setText(QString::number(m_red));
+                }
+                {
+                    const QSignalBlocker blocker(ui->greenSlider);
+                    ui->greenSlider->setValue(m_green);
+                    ui->greenNumLabel->setText(QString::number(m_green));
+                }
+                {
+                    const QSignalBlocker blocker(ui->blueSlider);
+                    ui->blueSlider->setValue(m_blue);
+                    ui->blueNumLabel->setText(QString::number(m_blue));
+                }
+            }
+        }
+        m_abbItem->setVisible(0);
     }
+}
+
+void MainWindow::on_redSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (!ui->autoAbbCheckBox->isChecked())
+        {
+            m_aSub[0] = value;
+            if (SUCCEEDED(Nncam_put_BlackBalance(m_hcam, m_aSub)))
+            {
+                m_red = value;
+                ui->redNumLabel->setText(QString::number(value));
+            }
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->redSlider);
+                    ui->redSlider->setValue(m_red);
+                }
+                QMessageBox::warning(this, "Warning", u8"黑平衡红色偏移调整失败。"); 
+            }
+        }
+    }
+}
+
+void MainWindow::on_greenSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (!ui->autoAbbCheckBox->isChecked())
+        {
+            m_aSub[1] = value;
+            if (SUCCEEDED(Nncam_put_BlackBalance(m_hcam, m_aSub)))
+            {
+                m_green = value;
+                ui->greenNumLabel->setText(QString::number(value));
+            }
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->greenSlider);
+                    ui->greenSlider->setValue(m_green);
+                }
+                QMessageBox::warning(this, "Warning", u8"黑平衡绿色偏移调整失败。"); 
+            }
+        }
+    }
+}
+
+void MainWindow::on_blueSlider_valueChanged(int value)
+{
+    if (m_hcam)
+    {
+        if (!ui->autoAbbCheckBox->isChecked())
+        {
+            m_aSub[2] = value;
+            if (SUCCEEDED(Nncam_put_BlackBalance(m_hcam, m_aSub)))
+            {
+                m_blue = value;
+                ui->blueNumLabel->setText(QString::number(value));
+            }
+            else
+            {
+                {
+                    const QSignalBlocker blocker(ui->blueSlider);
+                    ui->blueSlider->setValue(m_blue);
+                }
+                QMessageBox::warning(this, "Warning", u8"黑平衡蓝色偏移调整失败。"); 
+            }
+        }
+    }
+}
+
+void MainWindow::on_defaultAbbButton_clicked()
+{
+    ui->redSlider->setValue(0);
+    ui->greenSlider->setValue(0);
+    ui->blueSlider->setValue(0);
 }
 
 void MainWindow::on_hueSlider_valueChanged(int value)
@@ -607,37 +898,11 @@ void MainWindow::on_actionSerial_triggered(bool checked)
 
 void MainWindow::on_defaultColorButton_clicked()
 {
-    // 设置颜色默认参数
-    {
-        const QSignalBlocker blocker(ui->hueSlider);
-        ui->hueNumLabel->setText(QString::number(0));
-        ui->hueSlider->setRange(-180, 180);
-        ui->hueSlider->setValue(0);
-    }
-    {
-        const QSignalBlocker blocker(ui->saturationSlider);
-        ui->saturationNumLabel->setText(QString::number(128));
-        ui->saturationSlider->setRange(0, 255);
-        ui->saturationSlider->setValue(128);
-    }
-    {
-        const QSignalBlocker blocker(ui->brightnessSlider);
-        ui->brightnessNumLabel->setText(QString::number(0));
-        ui->brightnessSlider->setRange(-128, 128);
-        ui->brightnessSlider->setValue(0);
-    }
-    {
-        const QSignalBlocker blocker(ui->contrastSlider);
-        ui->contrastNumLabel->setText(QString::number(0));
-        ui->contrastSlider->setRange(-150, 150);
-        ui->contrastSlider->setValue(0);
-    }
-    {
-        const QSignalBlocker blocker(ui->gammaSlider);
-        ui->gammaNumLabel->setText(QString::number(100));
-        ui->gammaSlider->setRange(20, 180);
-        ui->gammaSlider->setValue(100);
-    }
+    ui->hueSlider->setValue(0);
+    ui->saturationSlider->setValue(128);
+    ui->brightnessSlider->setValue(0);
+    ui->contrastSlider->setValue(0);
+    ui->gammaSlider->setValue(100);
 }
 
 void MainWindow::onAERectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio)
@@ -670,6 +935,72 @@ void MainWindow::onAERectChanged(float leftRatio, float topRatio, float rightRat
         {
             qDebug() << "ae rect 设置失败\n";
             QMessageBox::warning(this, "Warning", u8"自动曝光设置失败。");
+        }
+    }
+}
+
+void MainWindow::onAWBRectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio)
+{
+    m_awbRect.left = static_cast<int>(leftRatio * m_imgWidth);
+    m_awbRect.top = static_cast<int>(topRatio * m_imgHeight);
+    m_awbRect.right = static_cast<int>(rightRatio * m_imgWidth);
+    m_awbRect.bottom = static_cast<int>(bottomRatio * m_imgHeight);
+
+    QString rectString = QString("Rect(left: %1, top: %2, right: %3, bottom: %4)")
+                             .arg(m_awbRect.left)
+                             .arg(m_awbRect.top)
+                             .arg(m_awbRect.right)
+                             .arg(m_awbRect.bottom);
+
+    qDebug() << rectString; // 输出格式化后的字符串
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_AWBAuxRect(m_hcam, &m_awbRect)))
+        {
+            if (SUCCEEDED(Nncam_AwbOnce(m_hcam, nullptr, nullptr)))
+            {}
+            else
+            {
+                QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。"); 
+            }
+        }
+        else
+        {
+            qDebug() << "awb rect 设置失败\n";
+            QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。");
+        }
+    }
+}
+
+void MainWindow::onABBRectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio)
+{
+    m_abbRect.left = static_cast<int>(leftRatio * m_imgWidth);
+    m_abbRect.top = static_cast<int>(topRatio * m_imgHeight);
+    m_abbRect.right = static_cast<int>(rightRatio * m_imgWidth);
+    m_abbRect.bottom = static_cast<int>(bottomRatio * m_imgHeight);
+
+    QString rectString = QString("Rect(left: %1, top: %2, right: %3, bottom: %4)")
+                             .arg(m_abbRect.left)
+                             .arg(m_abbRect.top)
+                             .arg(m_abbRect.right)
+                             .arg(m_abbRect.bottom);
+
+    qDebug() << rectString; // 输出格式化后的字符串
+    if (m_hcam)
+    {
+        if (SUCCEEDED(Nncam_put_ABBAuxRect(m_hcam, &m_abbRect)))
+        {
+            if (SUCCEEDED(Nncam_AbbOnce(m_hcam, nullptr, nullptr)))
+            {}
+            else
+            {
+                QMessageBox::warning(this, "Warning", u8"自动黑平衡调整失败。"); 
+            }
+        }
+        else
+        {
+            qDebug() << "abb rect 设置失败\n";
+            QMessageBox::warning(this, "Warning", u8"自动黑平衡调整失败。");
         }
     }
 }
@@ -773,6 +1104,13 @@ void MainWindow::openCamera()
                 }
             }
         }
+
+        // 处理画面比例
+        QRect layoutRect = ui->imageViewLayout->geometry();
+        m_previewWidth = layoutRect.width() - 30;
+        float ratio = float(m_previewWidth) / m_imgWidth;
+        m_previewHeight = int(m_imgHeight * ratio);
+        m_scene->setSceneRect(0, 0, m_previewWidth, m_previewHeight);
 
         // 启动摄像头
         startCamera();
@@ -882,10 +1220,16 @@ int MainWindow::closeCamera()
     ui->exposureTimeSlider->setEnabled(false);
     ui->gainSlider->setEnabled(false);
 
-    ui->whileBalanceButton->setEnabled(false);
+    ui->autoAwbCheckBox->setEnabled(false);
     ui->defaultAwbButton->setEnabled(false);
     ui->temperatureSlider->setEnabled(false);
     ui->tintSlider->setEnabled(false);
+
+    ui->autoAbbCheckBox->setEnabled(false);
+    ui->defaultAbbButton->setEnabled(false);
+    ui->redSlider->setEnabled(false);
+    ui->greenSlider->setEnabled(false);
+    ui->blueSlider->setEnabled(false);
 
     ui->hueSlider->setEnabled(false);
     ui->saturationSlider->setEnabled(false);
@@ -918,7 +1262,7 @@ void MainWindow::startCamera()
 
 void MainWindow::handleImageCaptured(const QImage &image)
 {
-    QImage newimage = image.scaled(ui->previewTab->size(), Qt::KeepAspectRatio, Qt::FastTransformation);
+    QImage newimage = image.scaled(m_previewWidth, m_previewHeight, Qt::KeepAspectRatio, Qt::FastTransformation);
     m_pixmapItem->setPixmap(QPixmap::fromImage(newimage));
 
     if (m_isRecording)
@@ -963,9 +1307,9 @@ void MainWindow::handleCameraStartMessage(bool message)
         ui->videoButton->setEnabled(true);
         ui->previewComboBox->setEnabled(true);
         ui->captureComboBox->setEnabled(true);
-        ui->autoExposureCheckBox->setEnabled(true);
 
         // 使能曝光功能
+        ui->autoExposureCheckBox->setEnabled(true);
         int bAuto = 0;
         Nncam_get_AutoExpoEnable(m_hcam, &bAuto);
         ui->exposureTargetSlider->setEnabled(1 == bAuto);
@@ -977,10 +1321,25 @@ void MainWindow::handleCameraStartMessage(bool message)
         }
 
         // 使能白平衡功能
-        ui->whileBalanceButton->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
+        ui->autoAwbCheckBox->setEnabled(true);
         ui->defaultAwbButton->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
         ui->temperatureSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
         ui->tintSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
+        {
+            const QSignalBlocker blocker(ui->autoAwbCheckBox);
+            ui->autoAwbCheckBox->setChecked(false);
+        }
+
+        // 使能黑平衡功能
+        ui->autoAbbCheckBox->setEnabled(true);
+        ui->defaultAbbButton->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
+        ui->redSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
+        ui->greenSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
+        ui->blueSlider->setEnabled(0 == (m_cur.model->flag & NNCAM_FLAG_MONO));
+        {
+            const QSignalBlocker blocker(ui->autoAbbCheckBox);
+            ui->autoAbbCheckBox->setChecked(false);
+        }
 
         // 使能颜色调整功能
         ui->hueSlider->setEnabled(true);
@@ -1258,5 +1617,3 @@ void MainWindow::onSpeedChanged()
         tBackwardData = QByteArray::fromHex("fffffc180000000000000000");  //fc 18 00 00
     }
 }
-
-

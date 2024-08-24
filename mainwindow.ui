@@ -66,7 +66,7 @@
        <enum>QFrame::Plain</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <property name="tabSpacing">
        <number>7</number>
@@ -526,19 +526,19 @@
          <x>0</x>
          <y>0</y>
          <width>300</width>
-         <height>250</height>
+         <height>260</height>
         </rect>
        </property>
        <property name="minimumSize">
         <size>
          <width>300</width>
-         <height>250</height>
+         <height>260</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>300</width>
-         <height>250</height>
+         <height>260</height>
         </size>
        </property>
        <attribute name="icon">
@@ -550,7 +550,20 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
+         <widget class="QCheckBox" name="autoAwbCheckBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>自动白平衡</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="temperatureLayout">
+          <property name="spacing">
+           <number>7</number>
+          </property>
           <item>
            <widget class="QLabel" name="temperatureLabel">
             <property name="text">
@@ -632,28 +645,188 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="wbSelectLayout">
+         <widget class="QPushButton" name="defaultAwbButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>默认值</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="blackBalancePage">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>302</width>
+         <height>300</height>
+        </rect>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>300</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>300</height>
+        </size>
+       </property>
+       <attribute name="icon">
+        <iconset resource="resource/resource.qrc">
+         <normaloff>:/images/images/black_balance.png</normaloff>:/images/images/black_balance.png</iconset>
+       </attribute>
+       <attribute name="label">
+        <string>黑平衡</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="QCheckBox" name="autoAbbCheckBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>自动黑平衡</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="redLayout">
           <item>
-           <widget class="QPushButton" name="whileBalanceButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
+           <widget class="QLabel" name="redLabel">
             <property name="text">
-             <string>白平衡</string>
+             <string>红色：</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="defaultAwbButton">
-            <property name="enabled">
-             <bool>false</bool>
+           <spacer name="redSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="redNumLabel">
             <property name="text">
-             <string>默认值</string>
+             <string>0</string>
             </property>
            </widget>
           </item>
          </layout>
+        </item>
+        <item>
+         <widget class="QSlider" name="redSlider">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="greenLayout">
+          <item>
+           <widget class="QLabel" name="greenLabel">
+            <property name="text">
+             <string>绿色：</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="greenSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="greenNumLabel">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QSlider" name="greenSlider">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="blueLayout">
+          <item>
+           <widget class="QLabel" name="blueLabel">
+            <property name="text">
+             <string>蓝色：</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="blueSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="blueNumLabel">
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QSlider" name="blueSlider">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="defaultAbbButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>默认值</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -1840,6 +2013,8 @@
      </widget>
     </item>
    </layout>
+   <zorder>serialWidget</zorder>
+   <zorder>toolBox</zorder>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">

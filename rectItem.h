@@ -18,14 +18,15 @@ public:
         setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable);
     }
 
-    void initRect(float left, float top, float right, float bottom, const QSizeF& size)
+    void initRect(float left, float top, float right, float bottom, int width, int height)
     {
-        int x = int(left * size.width());
-        int y = int(right * size.width());
-        int width = int((right - left) *  size.width());
-        int height = int((top - bottom) *  size.height());
-        setRect(x, y, width, height);
-        frameSize = size;
+        int x = int(left * width);
+        int y = int(right * width);
+        int rectWidth = int((right - left) *  width);
+        int rectHeight = int((top - bottom) *  height);
+        setRect(x, y, rectWidth, rectHeight);
+        m_width = width;
+        m_height = height;
     }
 
     void setColor(const QColor& color) {
@@ -84,12 +85,12 @@ protected:
         qDebug() << rect.y();
         qDebug() << rect.width();
         qDebug() << rect.height();
-        qDebug() << frameSize.width();
-        qDebug() << frameSize.height();
-        float leftRatio = static_cast<float>(rect.x()) / frameSize.width();
-        float topRatio = static_cast<float>(rect.y()) / frameSize.height();
-        float rightRatio = static_cast<float>((rect.x() + rect.width())) / frameSize.width();
-        float bottomRatio = static_cast<float>((rect.y() + rect.height())) / frameSize.height();
+        qDebug() << m_width;
+        qDebug() << m_height;
+        float leftRatio = static_cast<float>(rect.x()) / m_width;
+        float topRatio = static_cast<float>(rect.y()) / m_height;
+        float rightRatio = static_cast<float>((rect.x() + rect.width())) / m_width;
+        float bottomRatio = static_cast<float>((rect.y() + rect.height())) / m_height;
         emit rectChanged(leftRatio, topRatio, rightRatio, bottomRatio);
     }
 
@@ -113,5 +114,6 @@ private:
     bool resizing;
     bool moving;
     QPointF startPos;
-    QSizeF frameSize;
+    int m_width;
+    int m_height;
 };

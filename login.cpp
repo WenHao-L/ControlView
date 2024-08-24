@@ -36,7 +36,7 @@ void Login::on_loginButton_clicked()
         MainWindow *w = new MainWindow;
         w->setWindowTitle(u8"单细胞仪器");
         w->setWindowIcon(QIcon(":/images/images/logo.png"));
-        w->showMaximized();
+        // w->showMaximized();
     }else{
         QMessageBox::warning(this, "Warning", "The account number or password is incorrect.");
         ui->accountEdit->clear();

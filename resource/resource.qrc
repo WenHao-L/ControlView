@@ -20,5 +20,6 @@
         <file>images/video_disbale.png</file>
         <file>images/gdut.jpg</file>
         <file>images/color.png</file>
+        <file>images/black_balance.png</file>
     </qresource>
 </RCC>
