@@ -23,7 +23,8 @@ public:
         int x = int(left * width);
         int y = int(right * width);
         int rectWidth = int((right - left) *  width);
-        int rectHeight = int((top - bottom) *  height);
+        int rectHeight = int((bottom - top) *  height);
+        qDebug() << "初始化" << x << y << rectWidth << rectHeight;
         setRect(x, y, rectWidth, rectHeight);
         m_width = width;
         m_height = height;
@@ -80,23 +81,32 @@ protected:
         }
         // QGraphicsRectItem::mouseMoveEvent(event);
 
-        QRectF rect = this->rect();
-        qDebug() << rect.x();
-        qDebug() << rect.y();
-        qDebug() << rect.width();
-        qDebug() << rect.height();
-        qDebug() << m_width;
-        qDebug() << m_height;
-        float leftRatio = static_cast<float>(rect.x()) / m_width;
-        float topRatio = static_cast<float>(rect.y()) / m_height;
-        float rightRatio = static_cast<float>((rect.x() + rect.width())) / m_width;
-        float bottomRatio = static_cast<float>((rect.y() + rect.height())) / m_height;
-        emit rectChanged(leftRatio, topRatio, rightRatio, bottomRatio);
+        // QRectF rect = this->rect();
+        // qDebug() << rect.x();
+        // qDebug() << rect.y();
+        // qDebug() << rect.width();
+        // qDebug() << rect.height();
+        // qDebug() << m_width;
+        // qDebug() << m_height;
+        // float leftRatio = static_cast<float>(rect.x()) / m_width;
+        // float topRatio = static_cast<float>(rect.y()) / m_height;
+        // float rightRatio = static_cast<float>((rect.x() + rect.width())) / m_width;
+        // float bottomRatio = static_cast<float>((rect.y() + rect.height())) / m_height;
+        // emit rectChanged(leftRatio, topRatio, rightRatio, bottomRatio);
     }
 
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override {
         resizing = false;
         moving = false;
+
+        QRectF rect = this->rect();
+        qDebug() << "移动后" << rect.x() << rect.y() << rect.width() << rect.height();
+        qDebug() << m_width << m_height;
+        float leftRatio = static_cast<float>(rect.x()) / m_width;
+        float topRatio = static_cast<float>(rect.y()) / m_height;
+        float rightRatio = static_cast<float>((rect.x() + rect.width())) / m_width;
+        float bottomRatio = static_cast<float>((rect.y() + rect.height())) / m_height;
+        emit rectChanged(leftRatio, topRatio, rightRatio, bottomRatio);
         // QGraphicsRectItem::mouseReleaseEvent(event);
     }
 

@@ -60,7 +60,8 @@ void cameraThread::handleStillImageEvent()
         if (SUCCEEDED(Nncam_PullStillImage(hcam, &vec[0], 24, &width, &height)))
         {
             QImage image(&vec[0], width, height, QImage::Format_RGB888);
-            emit stillImageCaptured(image);
+            QImage copiedImage = image.copy();
+            emit stillImageCaptured(copiedImage);
         }
     }
 }

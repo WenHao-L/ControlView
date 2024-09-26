@@ -1,6 +1,5 @@
 #include <QMessageBox>
 #include <QTimer>
-#include <QLabel>
 #include <QFileDialog>
 #include <QDebug>
 #include "mainwindow.h"
@@ -14,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_isRecording(false)
     , m_hcam(nullptr)
     , m_timer(new QTimer(this))
+    , m_serialTimer(new QTimer(this))
     , m_imgWidth(5440), m_imgHeight(3648), m_pData(nullptr)
     , m_res(0), m_temp(NNCAM_TEMP_DEF), m_tint(NNCAM_TINT_DEF)
     , m_red(0), m_green(0), m_blue(0), m_count(0)
@@ -45,15 +45,16 @@ MainWindow::MainWindow(QWidget *parent)
     ui->serialWidget->setVisible(true);
 
     // 初始化相机预览窗口
-    m_scene = new QGraphicsScene(this);
+    m_scene = new MyGraphicsScene(this);
     m_imageView = new QGraphicsView(m_scene, this);
     ui->imageViewLayout->addWidget(m_imageView);
 
-    // QSize viewSize = ui->previewTab->size();
-    // m_scene->setSceneRect(0, 0, viewSize.width(), viewSize.height());
-
     m_pixmapItem = new QGraphicsPixmapItem();
     m_scene->addItem(m_pixmapItem);
+
+    connect(ui->lineMeasureButton, &QPushButton::clicked, m_scene, &MyGraphicsScene::startDrawingLine);
+    connect(ui->lineDeleteButton, &QPushButton::clicked, m_scene, &MyGraphicsScene::removeSelectedLine);
+    connect(m_scene, &MyGraphicsScene::addLineInfo, this, &MainWindow::addLineWidgets);
 
     // 设置默认自动曝光目标
     {
@@ -81,19 +82,19 @@ MainWindow::MainWindow(QWidget *parent)
     {
         const QSignalBlocker blocker(ui->redSlider);
         ui->redNumLabel->setText(QString::number(0));
-        ui->redSlider->setRange(0, 65535);
+        ui->redSlider->setRange(0, 255);
         ui->redSlider->setValue(0);
     }
     {
         const QSignalBlocker blocker(ui->greenSlider);
         ui->greenNumLabel->setText(QString::number(0));
-        ui->greenSlider->setRange(0, 65535);
+        ui->greenSlider->setRange(0, 255);
         ui->greenSlider->setValue(0);
     }
     {
         const QSignalBlocker blocker(ui->blueSlider);
         ui->blueNumLabel->setText(QString::number(0));
-        ui->blueSlider->setRange(0, 65535);
+        ui->blueSlider->setRange(0, 255);
         ui->blueSlider->setValue(0);
     }
 
@@ -138,12 +139,99 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     // 连接tab关闭信号和槽
-    connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MainWindow::closeTab);
+    ui->tabWidget->setTabsClosable(true);
+    connect(ui->tabWidget, &QTabWidget::tabCloseRequested, this, &MainWindow::closeTab);
     connect(ui->lowSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
     connect(ui->mediumSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
     connect(ui->highSpeedRadioButton, &QRadioButton::clicked, this, &MainWindow::onSpeedChanged);
 
+    // 设置档位滑动条
+    {
+        const QSignalBlocker blocker(ui->smallShiftSlider);
+        ui->smallShiftSlider->setRange(0, 478);
+    }
+
+    // 默认串口发送数据
+    sendDataPacket = createPacket(defaultData);
+    defaultDataPacket = createPacket(defaultData);
+
+    // 串口x, y, z轴定时器
+    m_serialTimer->setInterval(33);
+    connect(m_serialTimer, &QTimer::timeout, this, &MainWindow::sendData);
+
+    // x轴按钮
+    connect(ui->xAxisForwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(xForwardData);
+    });
+    connect(ui->xAxisForwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+    connect(ui->xAxisBackwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(xBackwardData);
+    });
+    connect(ui->xAxisBackwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+
+    // y轴按钮
+    connect(ui->yAxisForwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(yForwardData);
+    });
+    connect(ui->yAxisForwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+    connect(ui->yAxisBackwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(yBackwardData);
+    });
+    connect(ui->yAxisBackwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+
+    // z轴按钮
+    connect(ui->zAxisForwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(zForwardData);
+    });
+    connect(ui->zAxisForwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+    connect(ui->zAxisBackwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(zBackwardData);
+    });
+    connect(ui->zAxisBackwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+
+    // r轴按钮
+    connect(ui->rAxisForwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(rForwardData);
+    });
+    connect(ui->rAxisForwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+    connect(ui->rAxisBackwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(rBackwardData);
+    });
+    connect(ui->rAxisBackwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+
+    // t轴按钮
+    connect(ui->tAxisForwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(tForwardData);
+    });
+    connect(ui->tAxisForwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+    connect(ui->tAxisBackwardButton, &QPushButton::pressed, this, [this]() {
+        sendDataPacket = createPacket(tBackwardData);
+    });
+    connect(ui->tAxisBackwardButton, &QPushButton::released, this, [this]() {
+        sendDataPacket = defaultDataPacket;
+    });
+
     this->showMaximized();
+
+    // 计算
 }
 
 MainWindow::~MainWindow()
@@ -160,6 +248,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
         {
             delete m_timer;
             m_timer = nullptr;
+            delete m_serialTimer;
+            m_serialTimer = nullptr;
         }
         else
         {
@@ -171,6 +261,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
     {
         delete m_timer;
         m_timer = nullptr;
+        delete m_serialTimer;
+        m_serialTimer = nullptr;
     }
 
     if (m_serial)
@@ -261,7 +353,7 @@ void MainWindow::on_captureButton_clicked()
                 layout->setContentsMargins(0, 0, 0, 0);
                 newTab->setLayout(layout);
 
-                QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                QPixmap pixmap = QPixmap::fromImage(image.scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
                 imageLabel->setScaledContents(true);
                 imageLabel->setPixmap(pixmap);
 
@@ -272,7 +364,6 @@ void MainWindow::on_captureButton_clicked()
         }
         else
         {
-            qDebug() << "still\r\n";
             int currentCaptureIndex = ui->captureComboBox->currentIndex();
         
             // 使用当前选中的序号作为参数调用 Nncam_Snap 函数
@@ -288,7 +379,7 @@ void MainWindow::on_videoButton_clicked()
         // 确保相机已经打开，并且有有效的图像数据
         if (!m_hcam)
         {
-            QMessageBox::warning(this, tr("Record Error"), tr("Camera is not open."));
+            QMessageBox::warning(this, "Warning", u8"请先打开相机。");
             return;
         }
 
@@ -303,10 +394,6 @@ void MainWindow::on_videoButton_clicked()
                 ui->videoButton->setText("停止录像");
                 m_isRecording = true;
             }
-            else
-            {
-                QMessageBox::warning(this, tr("Record Error"), tr("Failed to start recording."));
-            }
         }
     }
     else
@@ -314,15 +401,21 @@ void MainWindow::on_videoButton_clicked()
         // 停止录制
         if (m_isRecording)
         {
+            m_isRecording = false;
             m_videoWriter.release();
             ui->videoButton->setText("录像");
-            m_isRecording = false;
         }
     }
 }
 
 void MainWindow::on_previewComboBox_currentIndexChanged(int index)
 {
+    if (m_isRecording)
+    {
+        QMessageBox::warning(this, "Warning", u8"请先停止录像。");
+        return;
+    }
+
     if (m_hcam)
         Nncam_Stop(m_hcam);
 
@@ -365,6 +458,8 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
                     float bottom = static_cast<float>(m_aeRect.bottom) / m_imgHeight;
 
                     m_aeItem = new RectItem();
+                    qDebug() << m_previewWidth << m_previewHeight;
+                    qDebug() << m_imgWidth << m_imgHeight;
                     m_aeItem->initRect(left, top, right, bottom, m_previewWidth, m_previewHeight);
                     m_aeItem->setColor(Qt::red);
                     m_scene->addItem(m_aeItem);
@@ -924,7 +1019,9 @@ void MainWindow::onAERectChanged(float leftRatio, float topRatio, float rightRat
         if (SUCCEEDED(Nncam_put_AEAuxRect(m_hcam, &m_aeRect)))
         {
             if (SUCCEEDED(Nncam_put_AutoExpoEnable(m_hcam, 1)))
-            {}
+            {
+                qDebug() << "auto ae设置成功\n";
+            }
             else
             {
                 qDebug() << "auto ae设置失败\n";
@@ -1005,6 +1102,50 @@ void MainWindow::onABBRectChanged(float leftRatio, float topRatio, float rightRa
     }
 }
 
+void MainWindow::addLineWidgets(QGraphicsLineItem* lineItem, double length) {
+
+    // float ratio = float(m_previewWidth) / m_imgWidth;
+    // float pixel_length = float(length) / ratio;
+    // float true_length = pixel_length;
+    // float x, y;
+    // Nncam_get_PixelSize(HNncam h, unsigned nResolutionIndex, &x, &y);
+
+
+    // Create QLabel and QPushButton for this line segment
+    QLabel* label = new QLabel(QString("长度: %1").arg(length), this);
+    QPushButton* deleteButton = new QPushButton("删除", this);
+
+    QHBoxLayout* hLayout = new QHBoxLayout;
+    hLayout->addWidget(label);
+    hLayout->addWidget(deleteButton);
+    QWidget* layoutWidget = new QWidget(this);
+    layoutWidget->setLayout(hLayout);
+
+    // Store the QLabel and QPushButton
+    labels[lineItem] = label;
+    deleteButtons[lineItem] = deleteButton;
+    layoutWidgets[lineItem] = layoutWidget;
+    ui->measureResultLayout->addWidget(layoutWidget);
+
+    // Connect delete button to the line removal slot
+    connect(deleteButton, &QPushButton::clicked, [this, lineItem]() {
+        m_scene->removeLine(lineItem);
+        removeLineWidgets(lineItem);
+    });
+}
+
+void MainWindow::removeLineWidgets(QGraphicsLineItem* lineItem) {
+    if (labels.contains(lineItem)) {
+        QLabel* label = labels.take(lineItem);
+        QPushButton* deleteButton = deleteButtons.take(lineItem);
+        QWidget* layoutWidget = layoutWidgets.take(lineItem);
+
+        delete label;
+        delete deleteButton;
+        delete layoutWidget;
+    }
+}
+
 void MainWindow::openCamera()
 {
     // 打开摄像头
@@ -1058,6 +1199,7 @@ void MainWindow::openCamera()
         unsigned uimax = 0, uimin = 0, uidef = 0;
         if (SUCCEEDED(Nncam_get_ExpTimeRange(m_hcam, &uimin, &uimax, &uidef)))
         {
+            qDebug() << uimax << uimin << uidef;  // 3600000000 100 2000  // 5s 0.1ms
             ui->exposureTimeSlider->setRange(uimin, uimax);
         }
         unsigned time = 0;
@@ -1127,7 +1269,7 @@ int MainWindow::closeCamera()
         // 弹出询问对话框，询问用户是否保存图像
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this, "保存图像",
-            "您有未保存的预览图像，是否保存？",
+            "您有未保存的图像，是否保存？",
             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
 
         if (reply == QMessageBox::Yes)
@@ -1135,25 +1277,7 @@ int MainWindow::closeCamera()
             // 用户选择保存图像
             for (int i = 0; i < imageVector.size(); ++i)
             {
-                QImage image = imageVector.at(i);
-                if (!image.isNull())
-                {
-                    // 弹出保存对话框，让用户选择保存路径
-                    QString filename = QString::asprintf("image_%u.jpg", i);
-                    QString path = QFileDialog::getSaveFileName(this, "Save Image", filename, "JPEG Files (*.jpg *.jpeg)");
-
-                    // 如果用户没有取消，保存图像
-                    if (!path.isEmpty())
-                    {
-                        image.save(path);
-                    }
-                    else
-                    {
-                        // 如果用户取消保存，取消关闭行为
-                        return 0;
-                    }
-                }
-
+                closeTab(i+1);
             }
         }
         else if (reply == QMessageBox::Cancel)
@@ -1163,31 +1287,42 @@ int MainWindow::closeCamera()
         }
     }
 
+    // 如果没有图像保存或者用户选择不保存，继续关闭相机并进行内存回收
+
+    // 移除所有标签页
+    while (ui->tabWidget->count() > 1)
+    {
+        QWidget *widget = ui->tabWidget->widget(1);
+        ui->tabWidget->removeTab(1);
+        delete widget;
+    }
+    // 清空图像向量
+    imageVector.clear();
+
+    // 停止录像
+    if (m_isRecording)
+    {
+        m_isRecording = false;
+        m_videoWriter.release();
+        ui->videoButton->setText("录像");
+    }
+
+    // 删除预览线程
     if (m_cameraThread)
     {
         delete m_cameraThread;
         m_cameraThread = nullptr;
     }
 
-    // 如果没有图像保存或者用户选择不保存，继续关闭相机并进行内存回收`
+    // 关闭相机
     if (m_hcam)
     {
         Nncam_Close(m_hcam);
         m_hcam = nullptr;
     }
+
     delete[] m_pData;
     m_pData = nullptr;
-
-    if (m_isRecording)
-    {
-        m_videoWriter.release();
-        ui->videoButton->setText("录像");
-        m_isRecording = false;
-    }
-
-    // 清空图像向量
-    imageVector.clear();
-
     delete m_imageView;
     m_imageView = nullptr;
     delete m_scene;
@@ -1195,13 +1330,10 @@ int MainWindow::closeCamera()
     delete m_pixmapItem;
     m_pixmapItem = nullptr;
 
-    // 移除所有标签页
-    while (ui->tabWidget->count() > 1)
-    {
-        ui->tabWidget->removeTab(1);
+    // 停止计时
+    if (m_timer->isActive()) {
+        m_timer->stop();
     }
-
-    m_timer->stop();
 
     ui->lblLabel->clear();
 
@@ -1238,6 +1370,10 @@ int MainWindow::closeCamera()
     ui->gammaSlider->setEnabled(false);
     ui->defaultColorButton->setEnabled(false);
 
+    ui->lineMeasureButton->setEnabled(false);
+    ui->lineDeleteButton->setEnabled(false);
+    ui->unitComboBox->setEnabled(false);
+
     return 1;
 }
 
@@ -1262,8 +1398,8 @@ void MainWindow::startCamera()
 
 void MainWindow::handleImageCaptured(const QImage &image)
 {
-    QImage newimage = image.scaled(m_previewWidth, m_previewHeight, Qt::KeepAspectRatio, Qt::FastTransformation);
-    m_pixmapItem->setPixmap(QPixmap::fromImage(newimage));
+    QImage newImage = image.scaled(m_previewWidth, m_previewHeight, Qt::KeepAspectRatio, Qt::FastTransformation);
+    m_pixmapItem->setPixmap(QPixmap::fromImage(newImage));
 
     if (m_isRecording)
     {
@@ -1285,7 +1421,7 @@ void MainWindow::handleStillImageCaptured(const QImage &image)
         layout->setContentsMargins(0, 0, 0, 0);
         newTab->setLayout(layout);
 
-        QPixmap pixmap = QPixmap::fromImage(image).scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        QPixmap pixmap = QPixmap::fromImage(image);
         imageLabel->setScaledContents(true);
         imageLabel->setPixmap(pixmap);
 
@@ -1349,6 +1485,11 @@ void MainWindow::handleCameraStartMessage(bool message)
         ui->gammaSlider->setEnabled(true);
         ui->defaultColorButton->setEnabled(true);
 
+        // 使能测量工具
+        ui->lineMeasureButton->setEnabled(true);
+        ui->lineDeleteButton->setEnabled(true);
+        ui->unitComboBox->setEnabled(true);
+
         // 启动一个定时器，每秒触发一次
         m_timer->start(1000);
     }
@@ -1368,14 +1509,14 @@ void MainWindow::handleEventCallBackMessage(QString message)
 void MainWindow::closeTab(int index)
 {
     if (index == 0)
-        closeCamera();
+        return;
 
     else if (index > 0 && index < ui->tabWidget->count() && index <= imageVector.size())
     {
         QImage image = imageVector.at(index-1);
 
         QString filename = QString::asprintf("image_%u.jpg", index-1);
-        QString path = QFileDialog::getSaveFileName(this, "Save Image", filename, "JPEG Files (*.jpg *.jpeg)");
+        QString path = QFileDialog::getSaveFileName(this, "Save Image", filename, "JPEG Files (*.jpg)");
 
         // 检查用户是否取消了对话框
         if (!path.isEmpty())
@@ -1385,9 +1526,9 @@ void MainWindow::closeTab(int index)
 
             // 从vector中移除对应的QImage
             imageVector.removeAt(index-1);
-            ui->tabWidget->removeTab(index);
             QWidget *widget = ui->tabWidget->widget(index);
-            widget->deleteLater();
+            ui->tabWidget->removeTab(index);
+            delete widget;
         }
     }
 }
@@ -1478,11 +1619,23 @@ void MainWindow::on_openSerialButton_clicked()
         ui->rAxisBackwardButton->setEnabled(true);
         ui->tAxisForwardButton->setEnabled(true);
         ui->tAxisBackwardButton->setEnabled(true);
+        ui->xAxisForwardButton->setEnabled(true);
+        ui->xAxisBackwardButton->setEnabled(true);
+        ui->yAxisForwardButton->setEnabled(true);
+        ui->yAxisBackwardButton->setEnabled(true);
+        ui->zAxisForwardButton->setEnabled(true);
+        ui->zAxisBackwardButton->setEnabled(true);
+        ui->bigShiftButton->setEnabled(true);
+        ui->smallShiftSlider->setEnabled(true);
 
         ui->serialMessageEdit->insertPlainText(u8"串口连接成功！\r\n");
+
+        m_serialTimer->start();
     }
     else
     {
+        m_serialTimer->stop();
+
         if (m_serial->isOpen())  //原先串口打开，则关闭串口
             m_serial->close();
 
@@ -1494,6 +1647,21 @@ void MainWindow::on_openSerialButton_clicked()
         ui->portBox->setEnabled(true);
         ui->openSerialButton->setText(u8"打开串口");
         ui->openSerialButton->setStyleSheet("");
+        ui->highSpeedRadioButton->setEnabled(false);
+        ui->mediumSpeedRadioButton->setEnabled(false);
+        ui->lowSpeedRadioButton->setEnabled(false);
+        ui->rAxisForwardButton->setEnabled(false);
+        ui->rAxisBackwardButton->setEnabled(false);
+        ui->tAxisForwardButton->setEnabled(false);
+        ui->tAxisBackwardButton->setEnabled(false);
+        ui->xAxisForwardButton->setEnabled(false);
+        ui->xAxisBackwardButton->setEnabled(false);
+        ui->yAxisForwardButton->setEnabled(false);
+        ui->yAxisBackwardButton->setEnabled(false);
+        ui->zAxisForwardButton->setEnabled(false);
+        ui->zAxisBackwardButton->setEnabled(false);
+        ui->bigShiftButton->setEnabled(false);
+        ui->smallShiftSlider->setEnabled(false);
     }
 }
 
@@ -1502,7 +1670,7 @@ QByteArray MainWindow::createPacket(const QByteArray &data) {
     packet.append(0x55);  // Start byte
     packet.append(data);
 
-    uint16_t crc = calculateCRC16(data);
+    uint16_t crc = CRC16::calculate(data);
     packet.append(reinterpret_cast<const char*>(&crc), sizeof(crc));
 
     packet.append(0xAA);  // End byte
@@ -1515,46 +1683,42 @@ void MainWindow::readSerialData()
     processReceivedData(data);
 }
 
-uint16_t MainWindow::calculateCRC16(const QByteArray &data) {
-    return CRC16::calculate(data);
-}
-
 void MainWindow::processReceivedData(const QByteArray &data) {
      QString dataString = QString::fromUtf8(data.toHex(' '));
      ui->serialMessageEdit->insertPlainText(u8"接收：" + dataString + "\r\n");
 
     // Verify packet structure
-    if (data.size() < 18 || data.at(0) != 0x55) {
+    if (data.size() < 19 || data.at(0) != 0x55) {
         ui->serialMessageEdit->insertPlainText(u8"数据接收错误！\r\n");
         return;
     }
 
-    QByteArray receivedData = data.mid(1, data.size() - 4);
-    uint16_t receivedCrc = *reinterpret_cast<const uint16_t*>(data.constData() + data.size() - 3);
-    uint16_t calculatedCrc = calculateCRC16(receivedData);
+    // QByteArray receivedData = data.mid(1, data.size() - 4);
+    // uint16_t receivedCrc = *reinterpret_cast<const uint16_t*>(data.constData() + data.size() - 3);
+    // uint16_t calculatedCrc = CRC16::calculate(receivedData);
 
-    if (receivedCrc != calculatedCrc) {
-        // Handle CRC error
-        ui->serialMessageEdit->insertPlainText(u8"CRC校验出错！\r\n");
-        return;
-    }
+    // if (receivedCrc != calculatedCrc) {
+    //     // Handle CRC error
+    //     ui->serialMessageEdit->insertPlainText(u8"CRC校验出错！\r\n");
+    //     return;
+    // }
 
-    // 提取前六位数据（温度等信息）
-    // QByteArray infoData = receivedData.left(6);
+    // // 提取前六位数据（温度等信息）
+    // // QByteArray infoData = receivedData.left(6);
 
-    // 提取七到十位数据（T轴电机角度）
-    QByteArray tAxisData = receivedData.mid(6, 4);
-    uint32_t tAxisAngle = *reinterpret_cast<const uint32_t*>(tAxisData.constData());
-    double tAngle = static_cast<double>(tAxisAngle) / 100.0;
-    double tRotation = tAngle - tOriginAngle;
-    ui->tGaugePanelWidget->setValue(tRotation);
+    // // 提取七到十位数据（T轴电机角度）
+    // QByteArray tAxisData = receivedData.mid(6, 4);
+    // uint32_t tAxisAngle = *reinterpret_cast<const uint32_t*>(tAxisData.constData());
+    // double tAngle = static_cast<double>(tAxisAngle) / 100.0;
+    // double tRotation = tAngle - tOriginAngle;
+    // ui->tGaugePanelWidget->setValue(tRotation);
 
-    // 提取十一到十四位数据（R轴电机角度）
-    QByteArray rAxisData = receivedData.mid(10, 4);
-    uint32_t rAxisAngle = *reinterpret_cast<const uint32_t*>(rAxisData.constData());
-    double rAngle = static_cast<double>(rAxisAngle) / 100.0;
-    double rRotation = rAngle - rOriginAngle;
-    ui->rGaugePanelWidget->setValue(rRotation);
+    // // 提取十一到十四位数据（R轴电机角度）
+    // QByteArray rAxisData = receivedData.mid(10, 4);
+    // uint32_t rAxisAngle = *reinterpret_cast<const uint32_t*>(rAxisData.constData());
+    // double rAngle = static_cast<double>(rAxisAngle) / 100.0;
+    // double rRotation = rAngle - rOriginAngle;
+    // ui->rGaugePanelWidget->setValue(rRotation);
 }
 
 void MainWindow::on_rAxisForwardButton_clicked()
@@ -1593,27 +1757,73 @@ void MainWindow::on_tAxisBackwardButton_clicked()
     }
 }
 
+void MainWindow::on_bigShiftButton_clicked()
+{
+    if (m_serial->isOpen())
+    {
+        QByteArray packet = createPacket(bigShiftData);
+        m_serial->write(packet);
+    }
+}
+
+void MainWindow::on_smallShiftSlider_valueChanged(int value)
+{
+    if (m_serial->isOpen())
+    {
+        unsigned short fInitialValue = 0x0201;
+        unsigned short fNewValue = fInitialValue + value;
+        fNewValue = fNewValue & 0xFFFF;
+        yForwardData[8] = static_cast<char>(fNewValue >> 8); // 高字节
+        yForwardData[9] = static_cast<char>(fNewValue & 0xFF); // 低字节
+        xForwardData[10] = static_cast<char>(fNewValue >> 8); // 高字节
+        xForwardData[11] = static_cast<char>(fNewValue & 0xFF); // 低字节
+        zForwardData[12] = static_cast<char>(fNewValue >> 8); // 高字节
+        zForwardData[13] = static_cast<char>(fNewValue & 0xFF); // 低字节
+
+        unsigned short bInitialValue = 0x01ff;
+        unsigned short bNewValue = bInitialValue + value;
+        bNewValue = bNewValue & 0xFFFF;
+        yBackwardData[8] = static_cast<char>(bNewValue >> 8); // 高字节
+        yBackwardData[9] = static_cast<char>(bNewValue & 0xFF); // 低字节
+        xBackwardData[10] = static_cast<char>(bNewValue >> 8); // 高字节
+        xBackwardData[11] = static_cast<char>(bNewValue & 0xFF); // 低字节
+        zBackwardData[12] = static_cast<char>(bNewValue >> 8); // 高字节
+        zBackwardData[13] = static_cast<char>(bNewValue & 0xFF); // 低字节
+    }
+}
+
 void MainWindow::onSpeedChanged()
 {
     if (ui->lowSpeedRadioButton->isChecked())
     {
-        rForwardData = QByteArray::fromHex("000000000000000100000000");
-        rBackwardData = QByteArray::fromHex("00000000ffffffff00000000");
-        tForwardData = QByteArray::fromHex("000000010000000000000000");
-        tBackwardData = QByteArray::fromHex("ffffffff0000000000000000");
+        rForwardData = QByteArray::fromHex("000000000000000102000200020000");
+        rBackwardData = QByteArray::fromHex("00000000ffffffff02000200020000");
+
+        tForwardData = QByteArray::fromHex("000000010000000002000200020000");
+        tBackwardData = QByteArray::fromHex("ffffffff0000000002000200020000");
     }
     else if (ui->mediumSpeedRadioButton->isChecked())
     {
-        rForwardData = QByteArray::fromHex("000000000000006400000000");
-        rBackwardData = QByteArray::fromHex("00000000ffffff9c00000000");
-        tForwardData = QByteArray::fromHex("000000640000000000000000");
-        tBackwardData = QByteArray::fromHex("ffffff9c0000000000000000");
+        rForwardData = QByteArray::fromHex("000000000000006402000200020000");
+        rBackwardData = QByteArray::fromHex("00000000ffffff9c02000200020000");
+
+        tForwardData = QByteArray::fromHex("000000640000000002000200020000");
+        tBackwardData = QByteArray::fromHex("ffffff9c0000000002000200020000");
     }
     else if (ui->highSpeedRadioButton->isChecked())
     {
-        rForwardData = QByteArray::fromHex("00000000000003e800000000");  // ff 00 00 00
-        rBackwardData = QByteArray::fromHex("00000000fffffc1800000000"); // 9c 00 00 00
-        tForwardData = QByteArray::fromHex("000003e80000000000000000");
-        tBackwardData = QByteArray::fromHex("fffffc180000000000000000");  //fc 18 00 00
+        rForwardData = QByteArray::fromHex("00000000000003e802000200020000");
+        rBackwardData = QByteArray::fromHex("00000000fffffc1802000200020000");
+
+        tForwardData = QByteArray::fromHex("000003e80000000002000200020000");
+        tBackwardData = QByteArray::fromHex("fffffc180000000002000200020000");
+    }
+}
+
+void MainWindow::sendData()
+{
+    if (m_serial->isOpen())
+    {
+        m_serial->write(sendDataPacket);
     }
 }

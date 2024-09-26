@@ -9,9 +9,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1290</width>
+    <width>1300</width>
     <height>991</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1200</width>
+    <height>0</height>
+   </size>
   </property>
   <property name="acceptDrops">
    <bool>false</bool>
@@ -66,7 +72,7 @@
        <enum>QFrame::Plain</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>4</number>
       </property>
       <property name="tabSpacing">
        <number>7</number>
@@ -1076,6 +1082,155 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="measurePage">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>302</width>
+         <height>720</height>
+        </rect>
+       </property>
+       <attribute name="icon">
+        <iconset resource="resource/resource.qrc">
+         <normaloff>:/images/images/measure.png</normaloff>:/images/images/measure.png</iconset>
+       </attribute>
+       <attribute name="label">
+        <string>测量</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <layout class="QHBoxLayout" name="lineBtnLayout">
+          <item>
+           <widget class="QPushButton" name="lineMeasureButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>线段</string>
+            </property>
+            <property name="icon">
+             <iconset resource="resource/resource.qrc">
+              <normaloff>:/images/images/line_disable.png</normaloff>
+              <normalon>:/images/images/line.png</normalon>:/images/images/line_disable.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="lineDeleteButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>删除</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="unitLayout">
+          <item>
+           <widget class="QLabel" name="unitLabel">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>单位：</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="unitSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QComboBox" name="unitComboBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>130</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="baseSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="measureResultLayout"/>
+        </item>
+        <item>
+         <spacer name="measureSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>637</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
     <item>
@@ -1378,27 +1533,33 @@
          <layout class="QVBoxLayout" name="verticalLayout_12">
           <item>
            <layout class="QHBoxLayout" name="rLayout">
+            <property name="spacing">
+             <number>0</number>
+            </property>
             <property name="leftMargin">
-             <number>11</number>
+             <number>30</number>
             </property>
             <item>
              <widget class="GaugePanel" name="rGaugePanelWidget" native="true">
               <property name="minimumSize">
                <size>
-                <width>160</width>
-                <height>160</height>
+                <width>120</width>
+                <height>120</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
-                <width>160</width>
-                <height>160</height>
+                <width>120</width>
+                <height>120</height>
                </size>
               </property>
              </widget>
             </item>
             <item>
              <layout class="QVBoxLayout" name="rLayout1">
+              <property name="spacing">
+               <number>0</number>
+              </property>
               <item>
                <spacer name="rSpacer1">
                 <property name="orientation">
@@ -1407,7 +1568,7 @@
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -1472,7 +1633,7 @@
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -1537,7 +1698,7 @@
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -1548,27 +1709,33 @@
           </item>
           <item>
            <layout class="QHBoxLayout" name="tLayout">
+            <property name="spacing">
+             <number>0</number>
+            </property>
             <property name="leftMargin">
-             <number>11</number>
+             <number>30</number>
             </property>
             <item>
              <widget class="GaugePanel" name="tGaugePanelWidget" native="true">
               <property name="minimumSize">
                <size>
-                <width>160</width>
-                <height>160</height>
+                <width>120</width>
+                <height>120</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
-                <width>160</width>
-                <height>160</height>
+                <width>120</width>
+                <height>120</height>
                </size>
               </property>
              </widget>
             </item>
             <item>
              <layout class="QVBoxLayout" name="tLayout1">
+              <property name="spacing">
+               <number>0</number>
+              </property>
               <item>
                <spacer name="tSpacer1">
                 <property name="orientation">
@@ -1577,7 +1744,7 @@
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -1642,7 +1809,7 @@
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -1707,7 +1874,7 @@
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -1715,19 +1882,6 @@
              </layout>
             </item>
            </layout>
-          </item>
-          <item>
-           <spacer name="controlSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           <item>
            <layout class="QHBoxLayout" name="xyzLayout">
@@ -1777,7 +1931,7 @@
                  </size>
                 </property>
                 <property name="text">
-                 <string>Y轴上</string>
+                 <string>Y轴进</string>
                 </property>
                </widget>
               </item>
@@ -1882,7 +2036,7 @@
                  </size>
                 </property>
                 <property name="text">
-                 <string>Y轴下</string>
+                 <string>Y轴退</string>
                 </property>
                </widget>
               </item>
@@ -1952,7 +2106,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="rAxisForwardButton_7">
+               <widget class="QPushButton" name="zAxisBackwardButton">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -1989,6 +2143,26 @@
              </spacer>
             </item>
            </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="bigShiftButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>换档</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="smallShiftSlider">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>

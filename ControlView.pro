@@ -39,7 +39,8 @@ HEADERS += \
     login.h \
     mainwindow.h \
     nncam.h \
-    rectItem.h
+    rectItem.h \
+    myGraphicsScene.h
 
 FORMS += \
     login.ui \
