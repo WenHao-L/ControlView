@@ -92,7 +92,9 @@ private slots:
 
     void onABBRectChanged(float leftRatio, float topRatio, float rightRatio, float bottomRatio);
 
-    void addLineWidgets(QGraphicsLineItem* lineItem, double length);
+    void on_unitComboBox_currentIndexChanged(int index);
+
+    void addLineWidgets(QGraphicsLineItem* lineItem, QPointF startPoint, QPointF endPoint);
 
     void removeLineWidgets(QGraphicsLineItem* lineItem);
 
@@ -104,6 +106,8 @@ private slots:
 
     void handleEventCallBackMessage(QString message);
 
+    void closeTab(int index);
+
     // 串口
     void on_actionSerial_triggered(bool checked);
 
@@ -111,23 +115,17 @@ private slots:
 
     void on_openSerialButton_clicked();
 
-    void readSerialData();
-
-    void on_rAxisForwardButton_clicked();
-
-    void on_rAxisBackwardButton_clicked();
-
-    void on_tAxisForwardButton_clicked();
-
-    void on_tAxisBackwardButton_clicked();
-
-    void onSpeedChanged();
-
     void on_bigShiftButton_clicked();
 
     void on_smallShiftSlider_valueChanged(int value);
 
+    void readSerialData();
+
+    void onSpeedChanged();
+
     void sendData();
+
+    void handleSerialError(QSerialPort::SerialPortError error);
 
 private:
     void resizeEvent(QResizeEvent *event);
@@ -138,7 +136,9 @@ private:
 
     void startCamera();
 
-    void closeTab(int index);
+    // 串口
+    void closeSerial();
+
 
     Ui::MainWindow*      ui;
     cv::VideoWriter      m_videoWriter;
@@ -151,6 +151,8 @@ private:
     unsigned             m_imgHeight;
     unsigned             m_previewWidth;
     unsigned             m_previewHeight;
+    float                m_xpixsz;
+    float                m_ypixsz;
     uchar*               m_pData;
     int                  m_res;
     int                  m_target;
@@ -189,14 +191,14 @@ private:
     QByteArray tForwardData = QByteArray::fromHex("000000010000000002000200020000");
     QByteArray tBackwardData = QByteArray::fromHex("ffffffff0000000002000200020000");
 
-    QByteArray xForwardData = QByteArray::fromHex("000000000000000002000201020000");
-    QByteArray xBackwardData = QByteArray::fromHex("0000000000000000020001ff020000");
+    QByteArray xForwardData = QByteArray::fromHex("0000000000000000020001ff020000");
+    QByteArray xBackwardData = QByteArray::fromHex("000000000000000002000201020000");
 
-    QByteArray yForwardData = QByteArray::fromHex("000000000000000002010200020000");
-    QByteArray yBackwardData = QByteArray::fromHex("000000000000000001ff0200020000");
+    QByteArray yForwardData = QByteArray::fromHex("000000000000000001ff0200020000");
+    QByteArray yBackwardData = QByteArray::fromHex("000000000000000002010200020000");
 
-    QByteArray zForwardData = QByteArray::fromHex("000000000000000002000200020100");
-    QByteArray zBackwardData = QByteArray::fromHex("00000000000000000200020001ff00");
+    QByteArray zForwardData = QByteArray::fromHex("00000000000000000200020001ff00");
+    QByteArray zBackwardData = QByteArray::fromHex("000000000000000002000200020100");
 
     QByteArray bigShiftData = QByteArray::fromHex("000000000000000002000200020020");
 
@@ -206,6 +208,9 @@ private:
 
     float rOriginAngle = 0.0;
     float tOriginAngle = 0.0;
+    int m_measureFlag = 0;
+    float m_distance = 0.0;
+    int m_bigShiftFlag = 0;
 
     // 串口通信
     QByteArray createPacket(const QByteArray &data);

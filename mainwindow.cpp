@@ -23,14 +23,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     // setWindowFlags(Qt::FramelessWindowHint);
 
-    // 仪表盘设置
-    ui->rGaugePanelWidget->setValueRange(60.0);
-    ui->tGaugePanelWidget->setValueRange(200.0);
-    ui->rGaugePanelWidget->setValueStep(1.0);
-    ui->tGaugePanelWidget->setValueStep(1.0);
-    ui->rGaugePanelWidget->setValue(0.0);
-    ui->tGaugePanelWidget->setValue(0.0);
-
     QFile qss(":qdarkstyle/dark/darkstyle.qss");
 
     if(qss.open(QFile::ReadOnly))
@@ -151,12 +143,24 @@ MainWindow::MainWindow(QWidget *parent)
         ui->smallShiftSlider->setRange(0, 478);
     }
 
+    // 设置量程单位
+    {
+        const QSignalBlocker blocker(ui->unitComboBox);
+        ui->unitComboBox->clear();
+        ui->unitComboBox->addItem("像素");
+        ui->unitComboBox->addItem("微米");
+        ui->unitComboBox->setCurrentIndex(0);
+    }
+
+    // 串口连接断开监测
+    connect(m_serial, &QSerialPort::errorOccurred, this, &MainWindow::handleSerialError);
+
     // 默认串口发送数据
     sendDataPacket = createPacket(defaultData);
     defaultDataPacket = createPacket(defaultData);
 
     // 串口x, y, z轴定时器
-    m_serialTimer->setInterval(33);
+    // m_serialTimer->setInterval(33);
     connect(m_serialTimer, &QTimer::timeout, this, &MainWindow::sendData);
 
     // x轴按钮
@@ -230,8 +234,6 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     this->showMaximized();
-
-    // 计算
 }
 
 MainWindow::~MainWindow()
@@ -248,8 +250,6 @@ void MainWindow::closeEvent(QCloseEvent* event)
         {
             delete m_timer;
             m_timer = nullptr;
-            delete m_serialTimer;
-            m_serialTimer = nullptr;
         }
         else
         {
@@ -257,20 +257,13 @@ void MainWindow::closeEvent(QCloseEvent* event)
             return;
         }
     }
-    else
-    {
-        delete m_timer;
-        m_timer = nullptr;
-        delete m_serialTimer;
-        m_serialTimer = nullptr;
-    }
 
     if (m_serial)
     {
-        if (m_serial->isOpen())  //原先串口打开，则关闭串口
-            m_serial->close();
-        delete[] m_serial;
-        m_serial = nullptr;
+        closeSerial();
+
+        delete m_serialTimer;
+        m_serialTimer = nullptr;
     }
 }
 
@@ -426,6 +419,8 @@ void MainWindow::on_previewComboBox_currentIndexChanged(int index)
     if (m_hcam)
     {
         Nncam_put_eSize(m_hcam, static_cast<unsigned>(m_res));
+        Nncam_get_PixelSize(m_hcam, static_cast<unsigned>(m_res), &m_xpixsz, &m_ypixsz);
+
         startCamera();
     }
 }
@@ -1102,17 +1097,43 @@ void MainWindow::onABBRectChanged(float leftRatio, float topRatio, float rightRa
     }
 }
 
-void MainWindow::addLineWidgets(QGraphicsLineItem* lineItem, double length) {
+void MainWindow::on_unitComboBox_currentIndexChanged(int index)
+{
+    m_measureFlag = index;
+}
 
-    // float ratio = float(m_previewWidth) / m_imgWidth;
-    // float pixel_length = float(length) / ratio;
-    // float true_length = pixel_length;
-    // float x, y;
-    // Nncam_get_PixelSize(HNncam h, unsigned nResolutionIndex, &x, &y);
+void MainWindow::addLineWidgets(QGraphicsLineItem* lineItem, QPointF startPoint, QPointF endPoint) {
 
+    // 获取起始点和结束点的 x 和 y 坐标，并转换为 float
+    float startScreenX = static_cast<float>(startPoint.x());
+    float startScreenY = static_cast<float>(startPoint.y());
+    float endScreenX = static_cast<float>(endPoint.x());
+    float endScreenY = static_cast<float>(endPoint.y());
+    // float screen2pixelRatio = static_cast<float>(m_previewWidth) / m_imgWidth;
 
-    // Create QLabel and QPushButton for this line segment
-    QLabel* label = new QLabel(QString("长度: %1").arg(length), this);
+    float startPixelX = startScreenX * m_imgWidth / m_previewWidth;
+    float startPixelY = startScreenY * m_imgHeight / m_previewHeight;
+    float endPixelX = endScreenX * m_imgWidth / m_previewWidth;
+    float endPixelY = endScreenY * m_imgHeight / m_previewHeight;
+    
+    if (m_measureFlag == 0)
+    {
+        float deltaX = endPixelX - startPixelX;
+        float deltaY = endPixelY - startPixelY;
+        m_distance = std::sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+    else{
+        float startRealX = startPixelX * m_xpixsz;
+        float startRealY = startPixelY * m_ypixsz;
+        float endRealX = endPixelX * m_xpixsz;
+        float endRealY = endPixelY * m_ypixsz;
+
+        float deltaX = endRealX - startRealX;
+        float deltaY = endRealY - startRealY;
+        m_distance = std::sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+
+    QLabel* label = new QLabel(QString("长度: %2").arg(m_distance), this);
     QPushButton* deleteButton = new QPushButton("删除", this);
 
     QHBoxLayout* hLayout = new QHBoxLayout;
@@ -1630,11 +1651,19 @@ void MainWindow::on_openSerialButton_clicked()
 
         ui->serialMessageEdit->insertPlainText(u8"串口连接成功！\r\n");
 
-        m_serialTimer->start();
+        m_serialTimer->start(23);
     }
     else
     {
-        m_serialTimer->stop();
+        closeSerial();
+    }
+}
+
+void MainWindow::closeSerial()
+{
+        if (m_serialTimer->isActive()) {
+            m_serialTimer->stop();
+        }
 
         if (m_serial->isOpen())  //原先串口打开，则关闭串口
             m_serial->close();
@@ -1662,7 +1691,6 @@ void MainWindow::on_openSerialButton_clicked()
         ui->zAxisBackwardButton->setEnabled(false);
         ui->bigShiftButton->setEnabled(false);
         ui->smallShiftSlider->setEnabled(false);
-    }
 }
 
 QByteArray MainWindow::createPacket(const QByteArray &data) {
@@ -1684,85 +1712,22 @@ void MainWindow::readSerialData()
 }
 
 void MainWindow::processReceivedData(const QByteArray &data) {
-     QString dataString = QString::fromUtf8(data.toHex(' '));
-     ui->serialMessageEdit->insertPlainText(u8"接收：" + dataString + "\r\n");
-
+    QString dataString = QString::fromUtf8(data.toHex(' '));
+    ui->serialMessageEdit->insertPlainText(u8"接收：" + dataString + "\r\n");
+    qDebug() << "1";
     // Verify packet structure
-    if (data.size() < 19 || data.at(0) != 0x55) {
-        ui->serialMessageEdit->insertPlainText(u8"数据接收错误！\r\n");
-        return;
-    }
-
-    // QByteArray receivedData = data.mid(1, data.size() - 4);
-    // uint16_t receivedCrc = *reinterpret_cast<const uint16_t*>(data.constData() + data.size() - 3);
-    // uint16_t calculatedCrc = CRC16::calculate(receivedData);
-
-    // if (receivedCrc != calculatedCrc) {
-    //     // Handle CRC error
-    //     ui->serialMessageEdit->insertPlainText(u8"CRC校验出错！\r\n");
+    // if (data.size() < 19 || data.at(0) != 0x55) {
+    //     ui->serialMessageEdit->insertPlainText(u8"数据接收错误！\r\n");
     //     return;
     // }
-
-    // // 提取前六位数据（温度等信息）
-    // // QByteArray infoData = receivedData.left(6);
-
-    // // 提取七到十位数据（T轴电机角度）
-    // QByteArray tAxisData = receivedData.mid(6, 4);
-    // uint32_t tAxisAngle = *reinterpret_cast<const uint32_t*>(tAxisData.constData());
-    // double tAngle = static_cast<double>(tAxisAngle) / 100.0;
-    // double tRotation = tAngle - tOriginAngle;
-    // ui->tGaugePanelWidget->setValue(tRotation);
-
-    // // 提取十一到十四位数据（R轴电机角度）
-    // QByteArray rAxisData = receivedData.mid(10, 4);
-    // uint32_t rAxisAngle = *reinterpret_cast<const uint32_t*>(rAxisData.constData());
-    // double rAngle = static_cast<double>(rAxisAngle) / 100.0;
-    // double rRotation = rAngle - rOriginAngle;
-    // ui->rGaugePanelWidget->setValue(rRotation);
-}
-
-void MainWindow::on_rAxisForwardButton_clicked()
-{
-    if (m_serial->isOpen())
-    {
-        QByteArray packet = createPacket(rForwardData);
-        m_serial->write(packet);
-    }
-}
-
-void MainWindow::on_rAxisBackwardButton_clicked()
-{
-    if (m_serial->isOpen())
-    {
-        QByteArray packet = createPacket(rBackwardData);
-        m_serial->write(packet);
-    }
-}
-
-void MainWindow::on_tAxisForwardButton_clicked()
-{
-    if (m_serial->isOpen())
-    {
-        QByteArray packet = createPacket(tForwardData);
-        m_serial->write(packet);
-    }
-}
-
-void MainWindow::on_tAxisBackwardButton_clicked()
-{
-    if (m_serial->isOpen())
-    {
-        QByteArray packet = createPacket(tBackwardData);
-        m_serial->write(packet);
-    }
 }
 
 void MainWindow::on_bigShiftButton_clicked()
 {
     if (m_serial->isOpen())
     {
-        QByteArray packet = createPacket(bigShiftData);
-        m_serial->write(packet);
+        m_bigShiftFlag = 1;
+        sendDataPacket = createPacket(bigShiftData);
     }
 }
 
@@ -1770,8 +1735,8 @@ void MainWindow::on_smallShiftSlider_valueChanged(int value)
 {
     if (m_serial->isOpen())
     {
-        unsigned short fInitialValue = 0x0201;
-        unsigned short fNewValue = fInitialValue + value;
+        unsigned short fInitialValue = 0x01ff;
+        unsigned short fNewValue = fInitialValue - value;
         fNewValue = fNewValue & 0xFFFF;
         yForwardData[8] = static_cast<char>(fNewValue >> 8); // 高字节
         yForwardData[9] = static_cast<char>(fNewValue & 0xFF); // 低字节
@@ -1780,7 +1745,7 @@ void MainWindow::on_smallShiftSlider_valueChanged(int value)
         zForwardData[12] = static_cast<char>(fNewValue >> 8); // 高字节
         zForwardData[13] = static_cast<char>(fNewValue & 0xFF); // 低字节
 
-        unsigned short bInitialValue = 0x01ff;
+        unsigned short bInitialValue = 0x0201;
         unsigned short bNewValue = bInitialValue + value;
         bNewValue = bNewValue & 0xFFFF;
         yBackwardData[8] = static_cast<char>(bNewValue >> 8); // 高字节
@@ -1824,6 +1789,20 @@ void MainWindow::sendData()
 {
     if (m_serial->isOpen())
     {
+        if (m_bigShiftFlag > 0)
+        {
+            m_bigShiftFlag += 1;
+        } 
+        if (m_bigShiftFlag > 30)
+        {
+            m_bigShiftFlag = 0;
+        }
+        qDebug() << sendDataPacket;
         m_serial->write(sendDataPacket);
     }
+}
+
+void MainWindow::handleSerialError(QSerialPort::SerialPortError error) {
+    closeSerial();
+    QMessageBox::warning(this, "Warning", u8"微位移串口连接出错！");
 }

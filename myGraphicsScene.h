@@ -19,10 +19,11 @@ public:
     void stopDrawingLine() {
         drawingLine = false;
         if (currentLineItem) {
-            double length = currentLineItem->line().length();
-            emit addLineInfo(currentLineItem, length);
-            // startPoint = currentLineItem->line().p1();
-            // endPoint = currentLineItem->line().p2();
+            // double length = currentLineItem->line().length();
+            // emit addLineInfo(currentLineItem, length);
+            QPointF startPoint = currentLineItem->line().p1();
+            QPointF endPoint = currentLineItem->line().p2();
+            emit addLineInfo(currentLineItem, startPoint, endPoint);
 
             lines.append(currentLineItem);
             currentLineItem = nullptr;
@@ -43,7 +44,8 @@ public:
     }
 
 signals:
-    void addLineInfo(QGraphicsLineItem* lineItem, double length);
+    // void addLineInfo(QGraphicsLineItem* lineItem, double length);
+    void addLineInfo(QGraphicsLineItem* lineItem, QPointF startPoint, QPointF endPoint);
 
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override {

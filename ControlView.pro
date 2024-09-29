@@ -26,7 +26,6 @@ INCLUDEPATH += ./inc
 SOURCES += \
     camerathread.cpp \
     crc16.cpp \
-    gaugepanel.cpp \
     login.cpp \
     main.cpp \
     mainwindow.cpp
@@ -35,7 +34,6 @@ HEADERS += \
     CustomTitleBar.h \
     camerathread.h \
     crc16.h \
-    gaugepanel.h \
     login.h \
     mainwindow.h \
     nncam.h \
