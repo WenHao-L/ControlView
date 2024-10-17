@@ -1793,9 +1793,10 @@ void MainWindow::sendData()
         {
             m_bigShiftFlag += 1;
         } 
-        if (m_bigShiftFlag > 30)
+        if (m_bigShiftFlag > 10)
         {
             m_bigShiftFlag = 0;
+            sendDataPacket = defaultDataPacket;
         }
         qDebug() << sendDataPacket;
         m_serial->write(sendDataPacket);
