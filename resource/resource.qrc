@@ -24,5 +24,7 @@
         <file>images/line.png</file>
         <file>images/line_disable.png</file>
         <file>images/measure.png</file>
+        <file>images/lock.png</file>
+        <file>images/lock_disable.png</file>
     </qresource>
 </RCC>

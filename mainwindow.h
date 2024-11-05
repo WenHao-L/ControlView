@@ -115,6 +115,8 @@ private slots:
 
     void on_openSerialButton_clicked();
 
+    void on_lockButton_clicked();
+
     void on_bigShiftButton_clicked();
 
     void on_smallShiftSlider_valueChanged(int value);
@@ -191,11 +193,11 @@ private:
     QByteArray tForwardData = QByteArray::fromHex("000000010000000002000200020000");
     QByteArray tBackwardData = QByteArray::fromHex("ffffffff0000000002000200020000");
 
-    QByteArray xForwardData = QByteArray::fromHex("0000000000000000020001ff020000");
-    QByteArray xBackwardData = QByteArray::fromHex("000000000000000002000201020000");
+    QByteArray yForwardData = QByteArray::fromHex("0000000000000000020001ff020000");
+    QByteArray yBackwardData = QByteArray::fromHex("000000000000000002000201020000");
 
-    QByteArray yForwardData = QByteArray::fromHex("000000000000000001ff0200020000");
-    QByteArray yBackwardData = QByteArray::fromHex("000000000000000002010200020000");
+    QByteArray xForwardData = QByteArray::fromHex("000000000000000001ff0200020000");
+    QByteArray xBackwardData = QByteArray::fromHex("000000000000000002010200020000");
 
     QByteArray zForwardData = QByteArray::fromHex("00000000000000000200020001ff00");
     QByteArray zBackwardData = QByteArray::fromHex("000000000000000002000200020100");
@@ -211,6 +213,7 @@ private:
     int m_measureFlag = 0;
     float m_distance = 0.0;
     int m_bigShiftFlag = 0;
+    int m_lockFlag = 0;
 
     // 串口通信
     QByteArray createPacket(const QByteArray &data);

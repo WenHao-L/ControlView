@@ -261,10 +261,10 @@ void MainWindow::closeEvent(QCloseEvent* event)
     if (m_serial)
     {
         closeSerial();
-
-        delete m_serialTimer;
-        m_serialTimer = nullptr;
     }
+
+    delete m_serialTimer;
+    m_serialTimer = nullptr;
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -330,37 +330,60 @@ void MainWindow::on_captureButton_clicked()
 {
     if (m_hcam)
     {
-        if (0 == m_cur.model->still)    // not support still image capture
+        // if (0 == m_cur.model->still)    // not support still image capture
+        // {
+        //     if (m_pData)
+        //     {
+        //         QImage image(m_pData, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
+
+        //         // 创建一个新的标签页
+        //         QWidget *newTab = new QWidget();
+        //         QLabel *imageLabel = new QLabel(newTab);
+
+        //         // 设置标签页的布局，确保QLabel自适应标签页大小
+        //         QVBoxLayout *layout = new QVBoxLayout(newTab);
+        //         layout->addWidget(imageLabel);
+        //         layout->setContentsMargins(0, 0, 0, 0);
+        //         newTab->setLayout(layout);
+
+        //         QPixmap pixmap = QPixmap::fromImage(image.scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        //         imageLabel->setScaledContents(true);
+        //         imageLabel->setPixmap(pixmap);
+
+        //         // 将新创建的QImage存储到vetor中，并添加标签页到tabWidget
+        //         ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
+        //         imageVector.append(image);
+        //     }
+        // }
+        // else
+        // {
+        //     int currentCaptureIndex = ui->captureComboBox->currentIndex();
+
+        //     // 使用当前选中的序号作为参数调用 Nncam_Snap 函数
+        //     Nncam_Snap(m_hcam, currentCaptureIndex);
+        // }
+
+        if (m_pData)
         {
-            if (m_pData)
-            {
-                QImage image(m_pData, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
+            QImage image(m_pData, m_imgWidth, m_imgHeight, QImage::Format_RGB888);
 
-                // 创建一个新的标签页
-                QWidget *newTab = new QWidget();
-                QLabel *imageLabel = new QLabel(newTab);
+            // 创建一个新的标签页
+            QWidget *newTab = new QWidget();
+            QLabel *imageLabel = new QLabel(newTab);
 
-                // 设置标签页的布局，确保QLabel自适应标签页大小
-                QVBoxLayout *layout = new QVBoxLayout(newTab);
-                layout->addWidget(imageLabel);
-                layout->setContentsMargins(0, 0, 0, 0);
-                newTab->setLayout(layout);
+            // 设置标签页的布局，确保QLabel自适应标签页大小
+            QVBoxLayout *layout = new QVBoxLayout(newTab);
+            layout->addWidget(imageLabel);
+            layout->setContentsMargins(0, 0, 0, 0);
+            newTab->setLayout(layout);
+            ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
 
-                QPixmap pixmap = QPixmap::fromImage(image.scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                imageLabel->setScaledContents(true);
-                imageLabel->setPixmap(pixmap);
+            QPixmap pixmap = QPixmap::fromImage(image.scaled(newTab->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            imageLabel->setScaledContents(true);
+            imageLabel->setPixmap(pixmap);
 
-                // 将新创建的QImage存储到vetor中，并添加标签页到tabWidget
-                ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
-                imageVector.append(image);
-            }
-        }
-        else
-        {
-            int currentCaptureIndex = ui->captureComboBox->currentIndex();
-        
-            // 使用当前选中的序号作为参数调用 Nncam_Snap 函数
-            Nncam_Snap(m_hcam, currentCaptureIndex);
+            // 将新创建的QImage存储到vetor中
+            imageVector.append(image);
         }
     }
 }
@@ -376,11 +399,13 @@ void MainWindow::on_videoButton_clicked()
             return;
         }
 
-        QString videoFileName = QFileDialog::getSaveFileName(this, tr("Save Video"), "", tr("Video Files (*.mp4)"));
+        QString videoFileName = QFileDialog::getSaveFileName(this, tr("Save Video"), "", tr("Video Files (*.avi)"));
         if (!videoFileName.isEmpty())
         {
-            double fps = 30.0;
-            m_videoWriter.open(videoFileName.toStdString(), cv::VideoWriter::fourcc('X','2','6','4'), fps, cv::Size(m_imgWidth, m_imgHeight), true);
+            double fps = 10.0;
+            // m_videoWriter.open(videoFileName.toStdString(), cv::VideoWriter::fourcc('X','2','6','4'), fps, cv::Size(m_imgWidth, m_imgHeight), true);  // .mp4 .mkv
+            m_videoWriter.open(videoFileName.toStdString(), cv::VideoWriter::fourcc('M','J','P','G'), fps, cv::Size(m_imgWidth, m_imgHeight), true);  // .avi .mov
+            // m_videoWriter.open(videoFileName.toStdString(), cv::VideoWriter::fourcc('X','V','I','D'), fps, cv::Size(m_imgWidth, m_imgHeight), true);  // .avi .mp4 .mkv
 
             if (m_videoWriter.isOpened())
             {
@@ -501,8 +526,8 @@ void MainWindow::on_autoExposureCheckBox_stateChanged(int state)
             {
                 {
                     const QSignalBlocker blocker(ui->exposureTimeSlider);
-                    ui->exposureTimeSlider->setValue(int(time));
-                    ui->exposureTimeNumLabel->setText(QString::number(time));
+                    ui->exposureTimeSlider->setValue(int(time/100));
+                    ui->exposureTimeNumLabel->setText(QString::number(time/100));
                 }
             }
         }
@@ -541,7 +566,7 @@ void MainWindow::on_exposureTargetSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->exposureTargetSlider);
                     ui->exposureTargetSlider->setValue(m_target);
                 }
-                QMessageBox::warning(this, "Warning", u8"调整自动曝光目标失败。"); 
+                QMessageBox::warning(this, "Warning", u8"调整自动曝光目标失败。");
             }
         }
     }
@@ -553,7 +578,7 @@ void MainWindow::on_exposureTimeSlider_valueChanged(int value)
     {
         if (!ui->autoExposureCheckBox->isChecked())
         {
-            if (SUCCEEDED(Nncam_put_ExpoTime(m_hcam, static_cast<unsigned>(value))))
+            if (SUCCEEDED(Nncam_put_ExpoTime(m_hcam, static_cast<unsigned>(value*100))))
             {
                 m_time = value;
                 ui->exposureTargetNumLabel->setText(QString::number(value));
@@ -564,7 +589,7 @@ void MainWindow::on_exposureTimeSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->exposureTimeSlider);
                     ui->exposureTimeSlider->setValue(m_time);
                 }
-                QMessageBox::warning(this, "Warning", u8"调整曝光时间失败。"); 
+                QMessageBox::warning(this, "Warning", u8"调整曝光时间失败。");
             }
         }
     }
@@ -587,7 +612,7 @@ void MainWindow::on_gainSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->gainSlider);
                     ui->gainSlider->setValue(m_gain);
                 }
-                QMessageBox::warning(this, "Warning", u8"调整曝光增益失败。"); 
+                QMessageBox::warning(this, "Warning", u8"调整曝光增益失败。");
             }
         }
     }
@@ -638,7 +663,7 @@ void MainWindow::on_autoAwbCheckBox_stateChanged(int state)
                 }
                 else
                 {
-                    QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。"); 
+                    QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。");
                 }
             }
         }
@@ -685,7 +710,7 @@ void MainWindow::on_temperatureSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->temperatureSlider);
                     ui->temperatureSlider->setValue(m_temp);
                 }
-                QMessageBox::warning(this, "Warning", u8"调整色温失败。"); 
+                QMessageBox::warning(this, "Warning", u8"调整色温失败。");
             }
         }
     }
@@ -708,7 +733,7 @@ void MainWindow::on_tintSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->tintSlider);
                     ui->tintSlider->setValue(m_tint);
                 }
-                QMessageBox::warning(this, "Warning", u8"调整Tint失败。");          
+                QMessageBox::warning(this, "Warning", u8"调整Tint失败。");
             }
         }
     }
@@ -766,7 +791,7 @@ void MainWindow::on_autoAbbCheckBox_stateChanged(int state)
                 }
                 else
                 {
-                    QMessageBox::warning(this, "Warning", u8"自动黑平衡调整失败。"); 
+                    QMessageBox::warning(this, "Warning", u8"自动黑平衡调整失败。");
                 }
             }
         }
@@ -820,7 +845,7 @@ void MainWindow::on_redSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->redSlider);
                     ui->redSlider->setValue(m_red);
                 }
-                QMessageBox::warning(this, "Warning", u8"黑平衡红色偏移调整失败。"); 
+                QMessageBox::warning(this, "Warning", u8"黑平衡红色偏移调整失败。");
             }
         }
     }
@@ -844,7 +869,7 @@ void MainWindow::on_greenSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->greenSlider);
                     ui->greenSlider->setValue(m_green);
                 }
-                QMessageBox::warning(this, "Warning", u8"黑平衡绿色偏移调整失败。"); 
+                QMessageBox::warning(this, "Warning", u8"黑平衡绿色偏移调整失败。");
             }
         }
     }
@@ -868,7 +893,7 @@ void MainWindow::on_blueSlider_valueChanged(int value)
                     const QSignalBlocker blocker(ui->blueSlider);
                     ui->blueSlider->setValue(m_blue);
                 }
-                QMessageBox::warning(this, "Warning", u8"黑平衡蓝色偏移调整失败。"); 
+                QMessageBox::warning(this, "Warning", u8"黑平衡蓝色偏移调整失败。");
             }
         }
     }
@@ -896,7 +921,7 @@ void MainWindow::on_hueSlider_valueChanged(int value)
                 const QSignalBlocker blocker(ui->hueSlider);
                 ui->hueSlider->setValue(m_hue);
             }
-            QMessageBox::warning(this, "Warning", u8"调整色度失败。");          
+            QMessageBox::warning(this, "Warning", u8"调整色度失败。");
         }
     }
 }
@@ -916,7 +941,7 @@ void MainWindow::on_saturationSlider_valueChanged(int value)
                 const QSignalBlocker blocker(ui->saturationSlider);
                 ui->saturationSlider->setValue(m_saturation);
             }
-            QMessageBox::warning(this, "Warning", u8"调整饱和度失败。");          
+            QMessageBox::warning(this, "Warning", u8"调整饱和度失败。");
         }
     }
 }
@@ -936,7 +961,7 @@ void MainWindow::on_brightnessSlider_valueChanged(int value)
                 const QSignalBlocker blocker(ui->brightnessSlider);
                 ui->brightnessSlider->setValue(m_brightness);
             }
-            QMessageBox::warning(this, "Warning", u8"调整亮度失败。");          
+            QMessageBox::warning(this, "Warning", u8"调整亮度失败。");
         }
     }
 }
@@ -956,7 +981,7 @@ void MainWindow::on_contrastSlider_valueChanged(int value)
                 const QSignalBlocker blocker(ui->contrastSlider);
                 ui->contrastSlider->setValue(m_contrast);
             }
-            QMessageBox::warning(this, "Warning", u8"调整对比度失败。");          
+            QMessageBox::warning(this, "Warning", u8"调整对比度失败。");
         }
     }
 }
@@ -976,7 +1001,7 @@ void MainWindow::on_gammaSlider_valueChanged(int value)
                 const QSignalBlocker blocker(ui->gammaSlider);
                 ui->gammaSlider->setValue(m_gamma);
             }
-            QMessageBox::warning(this, "Warning", u8"调整Gamma失败。");          
+            QMessageBox::warning(this, "Warning", u8"调整Gamma失败。");
         }
     }
 }
@@ -1053,7 +1078,7 @@ void MainWindow::onAWBRectChanged(float leftRatio, float topRatio, float rightRa
             {}
             else
             {
-                QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。"); 
+                QMessageBox::warning(this, "Warning", u8"自动白平衡调整失败。");
             }
         }
         else
@@ -1086,7 +1111,7 @@ void MainWindow::onABBRectChanged(float leftRatio, float topRatio, float rightRa
             {}
             else
             {
-                QMessageBox::warning(this, "Warning", u8"自动黑平衡调整失败。"); 
+                QMessageBox::warning(this, "Warning", u8"自动黑平衡调整失败。");
             }
         }
         else
@@ -1115,7 +1140,7 @@ void MainWindow::addLineWidgets(QGraphicsLineItem* lineItem, QPointF startPoint,
     float startPixelY = startScreenY * m_imgHeight / m_previewHeight;
     float endPixelX = endScreenX * m_imgWidth / m_previewWidth;
     float endPixelY = endScreenY * m_imgHeight / m_previewHeight;
-    
+
     if (m_measureFlag == 0)
     {
         float deltaX = endPixelX - startPixelX;
@@ -1220,16 +1245,16 @@ void MainWindow::openCamera()
         unsigned uimax = 0, uimin = 0, uidef = 0;
         if (SUCCEEDED(Nncam_get_ExpTimeRange(m_hcam, &uimin, &uimax, &uidef)))
         {
-            qDebug() << uimax << uimin << uidef;  // 3600000000 100 2000  // 5s 0.1ms
-            ui->exposureTimeSlider->setRange(uimin, uimax);
+            qDebug() << "time:" << uimax << uimin << uidef;  // 3600000000 100 2000  // 5s 0.1ms
+            ui->exposureTimeSlider->setRange(int(uimin/100), int(uimax/100));
         }
         unsigned time = 0;
         if (SUCCEEDED(Nncam_get_ExpoTime(m_hcam, &time)))
         {
             {
                 const QSignalBlocker blocker(ui->exposureTimeSlider);
-                ui->exposureTimeSlider->setValue(int(time));
-                ui->exposureTimeNumLabel->setText(QString::number(time));
+                ui->exposureTimeSlider->setValue(int(time/100));
+                ui->exposureTimeNumLabel->setText(QString::number(int(time/100)));
             }
         }
 
@@ -1308,7 +1333,13 @@ int MainWindow::closeCamera()
         }
     }
 
-    // 如果没有图像保存或者用户选择不保存，继续关闭相机并进行内存回收
+    // 关闭相机并进行内存回收
+
+    // 停止计时
+    if (m_timer->isActive()) {
+        m_timer->stop();
+    }
+    ui->lblLabel->clear();
 
     // 移除所有标签页
     while (ui->tabWidget->count() > 1)
@@ -1317,6 +1348,7 @@ int MainWindow::closeCamera()
         ui->tabWidget->removeTab(1);
         delete widget;
     }
+
     // 清空图像向量
     imageVector.clear();
 
@@ -1350,13 +1382,6 @@ int MainWindow::closeCamera()
     m_scene = nullptr;
     delete m_pixmapItem;
     m_pixmapItem = nullptr;
-
-    // 停止计时
-    if (m_timer->isActive()) {
-        m_timer->stop();
-    }
-
-    ui->lblLabel->clear();
 
     ui->cameraButton->setText("打开相机");
     ui->searchCameraButton->setEnabled(true);
@@ -1424,7 +1449,7 @@ void MainWindow::handleImageCaptured(const QImage &image)
 
     if (m_isRecording)
     {
-        cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, const_cast<uchar*>(image.bits()), image.bytesPerLine());
+        cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC3, const_cast<uchar*>(image.bits()), image.bytesPerLine()).clone();
         cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
         m_videoWriter.write(mat);
     }
@@ -1441,13 +1466,13 @@ void MainWindow::handleStillImageCaptured(const QImage &image)
         layout->addWidget(imageLabel);
         layout->setContentsMargins(0, 0, 0, 0);
         newTab->setLayout(layout);
+        ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
 
         QPixmap pixmap = QPixmap::fromImage(image);
         imageLabel->setScaledContents(true);
         imageLabel->setPixmap(pixmap);
 
-        // 将新创建的QImage存储到映射中，并添加标签页到tabWidget
-        ui->tabWidget->addTab(newTab, QString("image_") + QString::number(++m_count));
+        // 将新创建的QImage存储到映射中
         imageVector.append(image);
 }
 
@@ -1517,7 +1542,7 @@ void MainWindow::handleCameraStartMessage(bool message)
     else
     {
         closeCamera();
-        QMessageBox::warning(this, "Warning", u8"无法打开相机。");   
+        QMessageBox::warning(this, "Warning", u8"无法打开相机。");
     }
 }
 
@@ -1569,7 +1594,7 @@ void MainWindow::on_searchSerialButton_clicked()
 
     //光标移动到结尾
     ui->serialMessageEdit->moveCursor(QTextCursor::End);
-    ui->serialMessageEdit->insertPlainText(u8"\r\n串口初始化：\r\n");
+    ui->serialMessageEdit->insertPlainText(u8"\r\n正在搜索串口...\r\n");
 
 
     foreach(const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
@@ -1592,7 +1617,13 @@ void MainWindow::on_searchSerialButton_clicked()
     ui->serialMessageEdit->moveCursor(QTextCursor::End);        //光标移动到结尾
 
     if (ui->portBox->count() > 0)
+    {
         ui->openSerialButton->setEnabled(true);
+    }
+    else
+    {
+        ui->serialMessageEdit->insertPlainText(u8"\r\n无可用串口。\r\n");
+    }
 }
 
 void MainWindow::on_openSerialButton_clicked()
@@ -1621,7 +1652,7 @@ void MainWindow::on_openSerialButton_clicked()
         m_serial->setFlowControl(QSerialPort::NoFlowControl);  //设置为无流控制
 
         //连接信号和槽函数，串口有数据可读时，调用ReadData()函数读取数据并处理。
-        connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readSerialData);
+        // connect(m_serial, &QSerialPort::readyRead, this, &MainWindow::readSerialData);
 
         //打开串口
         if (!m_serial->open(QIODevice::ReadWrite)) {
@@ -1633,6 +1664,7 @@ void MainWindow::on_openSerialButton_clicked()
         ui->portBox->setEnabled(false);
         ui->openSerialButton->setText(u8"关闭串口");
         ui->openSerialButton->setStyleSheet("background-color:red");
+        ui->lockButton->setEnabled(true);
         ui->highSpeedRadioButton->setEnabled(true);
         ui->mediumSpeedRadioButton->setEnabled(true);
         ui->lowSpeedRadioButton->setEnabled(true);
@@ -1676,6 +1708,7 @@ void MainWindow::closeSerial()
         ui->portBox->setEnabled(true);
         ui->openSerialButton->setText(u8"打开串口");
         ui->openSerialButton->setStyleSheet("");
+        ui->lockButton->setEnabled(false);
         ui->highSpeedRadioButton->setEnabled(false);
         ui->mediumSpeedRadioButton->setEnabled(false);
         ui->lowSpeedRadioButton->setEnabled(false);
@@ -1695,13 +1728,20 @@ void MainWindow::closeSerial()
 
 QByteArray MainWindow::createPacket(const QByteArray &data) {
     QByteArray packet;
+    QByteArray dataPacket;
     packet.append(0x55);  // Start byte
-    packet.append(data);
+    dataPacket.append(data);
 
-    uint16_t crc = CRC16::calculate(data);
+    if (m_lockFlag == 1)
+        dataPacket.append(static_cast<char>(0x01));
+    else
+        dataPacket.append(static_cast<char>(0x00));
+
+    packet.append(dataPacket);
+    uint16_t crc = CRC16::calculate(dataPacket);
     packet.append(reinterpret_cast<const char*>(&crc), sizeof(crc));
 
-    packet.append(0xAA);  // End byte
+    packet.append(static_cast<char>(0xAA));  // End byte
     return packet;
 }
 
@@ -1714,7 +1754,6 @@ void MainWindow::readSerialData()
 void MainWindow::processReceivedData(const QByteArray &data) {
     QString dataString = QString::fromUtf8(data.toHex(' '));
     ui->serialMessageEdit->insertPlainText(u8"接收：" + dataString + "\r\n");
-    qDebug() << "1";
     // Verify packet structure
     // if (data.size() < 19 || data.at(0) != 0x55) {
     //     ui->serialMessageEdit->insertPlainText(u8"数据接收错误！\r\n");
@@ -1738,20 +1777,20 @@ void MainWindow::on_smallShiftSlider_valueChanged(int value)
         unsigned short fInitialValue = 0x01ff;
         unsigned short fNewValue = fInitialValue - value;
         fNewValue = fNewValue & 0xFFFF;
-        yForwardData[8] = static_cast<char>(fNewValue >> 8); // 高字节
-        yForwardData[9] = static_cast<char>(fNewValue & 0xFF); // 低字节
-        xForwardData[10] = static_cast<char>(fNewValue >> 8); // 高字节
-        xForwardData[11] = static_cast<char>(fNewValue & 0xFF); // 低字节
+        xForwardData[8] = static_cast<char>(fNewValue >> 8); // 高字节
+        xForwardData[9] = static_cast<char>(fNewValue & 0xFF); // 低字节
+        yForwardData[10] = static_cast<char>(fNewValue >> 8); // 高字节
+        yForwardData[11] = static_cast<char>(fNewValue & 0xFF); // 低字节
         zForwardData[12] = static_cast<char>(fNewValue >> 8); // 高字节
         zForwardData[13] = static_cast<char>(fNewValue & 0xFF); // 低字节
 
         unsigned short bInitialValue = 0x0201;
         unsigned short bNewValue = bInitialValue + value;
         bNewValue = bNewValue & 0xFFFF;
-        yBackwardData[8] = static_cast<char>(bNewValue >> 8); // 高字节
-        yBackwardData[9] = static_cast<char>(bNewValue & 0xFF); // 低字节
-        xBackwardData[10] = static_cast<char>(bNewValue >> 8); // 高字节
-        xBackwardData[11] = static_cast<char>(bNewValue & 0xFF); // 低字节
+        xBackwardData[8] = static_cast<char>(bNewValue >> 8); // 高字节
+        xBackwardData[9] = static_cast<char>(bNewValue & 0xFF); // 低字节
+        yBackwardData[10] = static_cast<char>(bNewValue >> 8); // 高字节
+        yBackwardData[11] = static_cast<char>(bNewValue & 0xFF); // 低字节
         zBackwardData[12] = static_cast<char>(bNewValue >> 8); // 高字节
         zBackwardData[13] = static_cast<char>(bNewValue & 0xFF); // 低字节
     }
@@ -1792,7 +1831,7 @@ void MainWindow::sendData()
         if (m_bigShiftFlag > 0)
         {
             m_bigShiftFlag += 1;
-        } 
+        }
         if (m_bigShiftFlag > 10)
         {
             m_bigShiftFlag = 0;
@@ -1806,4 +1845,24 @@ void MainWindow::sendData()
 void MainWindow::handleSerialError(QSerialPort::SerialPortError error) {
     closeSerial();
     QMessageBox::warning(this, "Warning", u8"微位移串口连接出错！");
+}
+
+void MainWindow::on_lockButton_clicked()
+{
+    if(ui->lockButton->text() == tr(u8"锁住"))
+    {
+        m_lockFlag = 1;
+        defaultDataPacket = createPacket(defaultData);
+        sendDataPacket = defaultDataPacket;
+        ui->lockButton->setText(u8"解锁");
+        ui->lockButton->setStyleSheet("background-color:red");
+    }
+    else
+    {
+        m_lockFlag = 0;
+        defaultDataPacket = createPacket(defaultData);
+        sendDataPacket = defaultDataPacket;
+        ui->lockButton->setText(u8"锁住");
+        ui->lockButton->setStyleSheet("");
+    }
 }

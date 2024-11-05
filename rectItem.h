@@ -21,7 +21,7 @@ public:
     void initRect(float left, float top, float right, float bottom, int width, int height)
     {
         int x = int(left * width);
-        int y = int(right * width);
+        int y = int(top * height);
         int rectWidth = int((right - left) *  width);
         int rectHeight = int((bottom - top) *  height);
         qDebug() << "初始化" << x << y << rectWidth << rectHeight;
